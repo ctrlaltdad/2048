@@ -164,8 +164,8 @@ def main():
         print("Two-phase ML mode: test strategies that switch move sequence at a given tile.")
         runs_per_seq = 10  # Reduced from 50 for faster testing
         lengths = [3, 4, 5]  # Now using 3, 4, 5
-        sample_pairs = 500  # Number of random (seq1, seq2) pairs to test per length
-        switch_tile = int(input("Enter switch tile (e.g., 512): ").strip())
+        sample_pairs = 50000  # Increased from 10000 for better statistical coverage
+        switch_tile = 512  # Set here, no user prompt
         best_results = []
         with ProcessPoolExecutor() as executor:
             for l in lengths:
@@ -189,7 +189,10 @@ def main():
                     if avg_tile > best_avg_tile:
                         best_avg_tile = avg_tile
                         best_seqs = (seq1, seq2)
-                    if max_tile > best_max_tile or (max_tile == best_max_tile and max_tile_count > best_max_tile_count):
+                    if (
+                        max_tile > best_max_tile or
+                        (max_tile == best_max_tile and max_tile_count > best_max_tile_count)
+                    ):
                         best_max_tile = max_tile
                         best_max_tile_seqs = (seq1, seq2)
                         best_max_tile_count = max_tile_count

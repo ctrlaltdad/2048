@@ -1,18 +1,19 @@
+import numpy as np
 import random
 import os
 
 class Game2048:
     def __init__(self):
-        self.board = [[0] * 4 for _ in range(4)]
+        self.board = np.zeros((4, 4), dtype=np.int32)
         self.score = 0
         self.add_new_tile()
         self.add_new_tile()
 
     def add_new_tile(self):
-        empty_cells = [(i, j) for i in range(4) for j in range(4) if self.board[i][j] == 0]
-        if empty_cells:
-            i, j = random.choice(empty_cells)
-            self.board[i][j] = 4 if random.random() < 0.1 else 2
+        empty = np.argwhere(self.board == 0)
+        if len(empty) > 0:
+            i, j = empty[random.randrange(len(empty))]
+            self.board[i, j] = 4 if random.random() < 0.1 else 2
 
     def print_board(self):
         os.system('cls' if os.name == 'nt' else 'clear')
@@ -29,72 +30,75 @@ class Game2048:
         print("-" * 25)
 
     def move_tiles(self, direction):
-        before = [row[:] for row in self.board]
+        before = self.board.copy()
         if direction in ['left', 'right']:
             reverse = (direction == 'right')
-            self.board = [self.merge(row, reverse) for row in self.board]
+            for i in range(4):
+                self.board[i] = self.merge(self.board[i], reverse)
         else:  # up or down
             reverse = (direction == 'down')
-            # Transpose the board
-            self.board = list(map(list, zip(*self.board)))
-            # Merge each row
-            self.board = [self.merge(row, reverse) for row in self.board]
-            # Transpose back
-            self.board = list(map(list, zip(*self.board)))
-        
-        if before != self.board:
+            self.board = self.board.T
+            for i in range(4):
+                self.board[i] = self.merge(self.board[i], reverse)
+            self.board = self.board.T
+        if not np.array_equal(before, self.board):
             self.add_new_tile()
             return True
         return False
 
     def merge(self, row, reverse=False):
-        # Remove zeros and create new row
-        row = [x for x in row if x != 0]
+        # row: 1D numpy array
+        nonzero = row[row != 0]
         if reverse:
-            row.reverse()
-        # Merge adjacent equal numbers
+            nonzero = nonzero[::-1]
+        merged = []
+        skip = False
         i = 0
-        while i < len(row) - 1:
-            if row[i] == row[i + 1]:
-                row[i] *= 2
-                self.score += row[i]
-                row.pop(i + 1)
+        while i < len(nonzero):
+            if not skip and i + 1 < len(nonzero) and nonzero[i] == nonzero[i + 1]:
+                merged_val = nonzero[i] * 2
+                self.score += merged_val
+                merged.append(merged_val)
+                skip = True
+            else:
+                if not skip:
+                    merged.append(nonzero[i])
+                skip = False
             i += 1
-        # Add zeros to maintain size (always to the end)
-        while len(row) < 4:
-            row.append(0)
+            if skip:
+                i += 1
+                skip = False
+        merged = np.array(merged, dtype=np.int32)
+        # Pad with zeros
+        if len(merged) < 4:
+            merged = np.concatenate([merged, np.zeros(4 - len(merged), dtype=np.int32)])
         if reverse:
-            row.reverse()
-        return row
+            merged = merged[::-1]
+        return merged
 
     def is_game_over(self):
-        # Check if there are any empty cells
-        if any(0 in row for row in self.board):
+        if np.any(self.board == 0):
             return False
-        
-        # Check if any adjacent cells are equal
         for i in range(4):
             for j in range(4):
-                current = self.board[i][j]
-                # Check right neighbor
-                if j < 3 and current == self.board[i][j + 1]:
+                current = self.board[i, j]
+                if j < 3 and current == self.board[i, j + 1]:
                     return False
-                # Check bottom neighbor
-                if i < 3 and current == self.board[i + 1][j]:
+                if i < 3 and current == self.board[i + 1, j]:
                     return False
         return True
 
     def has_won(self):
-        return any(2048 in row for row in self.board)
+        return np.any(self.board == 2048)
 
     def copy(self):
         new_game = Game2048()
-        new_game.board = [row[:] for row in self.board]
+        new_game.board = self.board.copy()
         new_game.score = self.score
         return new_game
 
     def get_state(self):
-        return [row[:] for row in self.board], self.score
+        return self.board.copy(), self.score
 
 def main():
     game = Game2048()
