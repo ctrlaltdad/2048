@@ -33,9 +33,12 @@ def simulate_sequence(seq):
     max_tile = max(max(row) for row in board)
     return max_tile, score, seq, move_count
 
-def run_parallel_simulations(seq, runs_per_seq):
-    with ProcessPoolExecutor() as executor:
+def run_parallel_simulations(seq, runs_per_seq, executor=None):
+    if executor is not None:
         results = list(executor.map(simulate_sequence, [seq]*runs_per_seq))
+    else:
+        with ProcessPoolExecutor() as local_executor:
+            results = list(local_executor.map(simulate_sequence, [seq]*runs_per_seq))
     tiles = [result[0] for result in results]
     scores = [result[1] for result in results]
     return tiles, scores
@@ -98,32 +101,40 @@ def main():
     best_seqs_by_length = []
     best_max_tiles_by_length = []
     best_max_tile_seqs_by_length = []
+    best_max_tile_percents = []
     lengths = [5, 6, 7, 8]
-    for seq_len in lengths:
-        print(f"\n--- Testing sequence length {seq_len} ---")
-        best_avg_tile = 0
-        best_tile_seq = []
-        best_max_tile = 0
-        best_max_tile_seq = []
-        total_seqs = 4 ** seq_len
-        for idx, seq in enumerate(tqdm(itertools.product(MOVES, repeat=seq_len), total=total_seqs, desc=f"{seq_len}-move sequences"), 1):
-            tiles, scores = run_parallel_simulations(seq, runs_per_seq)
-            avg_tile = np.mean(tiles)
-            max_tile = np.max(tiles)
-            if avg_tile > best_avg_tile:
-                best_avg_tile = avg_tile
-                best_tile_seq = seq
-            if max_tile > best_max_tile:
-                best_max_tile = max_tile
-                best_max_tile_seq = seq
-        best_avg_tiles_by_length.append(best_avg_tile)
-        best_seqs_by_length.append(best_tile_seq)
-        best_max_tiles_by_length.append(best_max_tile)
-        best_max_tile_seqs_by_length.append(best_max_tile_seq)
-        print(f"Best average tile for length {seq_len}: {best_avg_tile}")
-        print(f"Best sequence by average: {[MOVE_LABELS[m] for m in best_tile_seq]}")
-        print(f"Top tile achieved for length {seq_len}: {best_max_tile}")
-        print(f"Sequence for top tile: {[MOVE_LABELS[m] for m in best_max_tile_seq]}")
+    with ProcessPoolExecutor() as executor:
+        for seq_len in lengths:
+            print(f"\n--- Testing sequence length {seq_len} ---")
+            best_avg_tile = 0
+            best_tile_seq = []
+            best_max_tile = 0
+            best_max_tile_seq = []
+            best_max_tile_count = 0
+            total_seqs = 4 ** seq_len
+            for idx, seq in enumerate(tqdm(itertools.product(MOVES, repeat=seq_len), total=total_seqs, desc=f"{seq_len}-move sequences"), 1):
+                tiles, scores = run_parallel_simulations(seq, runs_per_seq, executor)
+                avg_tile = np.mean(tiles)
+                max_tile = np.max(tiles)
+                max_tile_count = sum(1 for t in tiles if t == max_tile)
+                if avg_tile > best_avg_tile:
+                    best_avg_tile = avg_tile
+                    best_tile_seq = seq
+                if max_tile > best_max_tile or (max_tile == best_max_tile and max_tile_count > best_max_tile_count):
+                    best_max_tile = max_tile
+                    best_max_tile_seq = seq
+                    best_max_tile_count = max_tile_count
+            best_avg_tiles_by_length.append(best_avg_tile)
+            best_seqs_by_length.append(best_tile_seq)
+            best_max_tiles_by_length.append(best_max_tile)
+            best_max_tile_seqs_by_length.append(best_max_tile_seq)
+            percent = 100.0 * best_max_tile_count / runs_per_seq
+            best_max_tile_percents.append(percent)
+            print(f"Best average tile for length {seq_len}: {best_avg_tile}")
+            print(f"Best sequence by average: {[MOVE_LABELS[m] for m in best_tile_seq]}")
+            print(f"Top tile achieved for length {seq_len}: {best_max_tile}")
+            print(f"Sequence for top tile: {[MOVE_LABELS[m] for m in best_max_tile_seq]}")
+            print(f"Percent of runs for top tile: {percent:.1f}%")
     # Plot best average tile and best max tile vs. sequence length
     plt.figure(figsize=(8, 5))
     plt.plot(lengths, best_avg_tiles_by_length, marker='o', label='Best Avg Highest Tile')
@@ -138,8 +149,10 @@ def main():
     plt.show()
     # Print summary
     print("\n===== SUMMARY =====")
-    for l, avg_t, avg_s, max_t, max_s in zip(lengths, best_avg_tiles_by_length, best_seqs_by_length, best_max_tiles_by_length, best_max_tile_seqs_by_length):
-        print(f"Length {l}:\n  Best Avg Tile={avg_t:.2f} | Sequence={[MOVE_LABELS[m] for m in avg_s]}\n  Top Tile={max_t} | Sequence={[MOVE_LABELS[m] for m in max_s]}")
+    for l, avg_t, avg_s, max_t, max_s, pct in zip(lengths, best_avg_tiles_by_length, best_seqs_by_length, best_max_tiles_by_length, best_max_tile_seqs_by_length, best_max_tile_percents):
+        print(f"Length {l}:")
+        print(f"  Best Avg Tile={avg_t:.2f} | Sequence={[MOVE_LABELS[m] for m in avg_s]}")
+        print(f"  Top Tile={max_t} | Sequence={[MOVE_LABELS[m] for m in max_s]} | Percent of runs: {pct:.1f}%")
 
 if __name__ == "__main__":
     main()
