@@ -9,6 +9,10 @@ MOVES = ['up', 'down', 'left', 'right']
 MOVE_LABELS = {'up': 'w', 'down': 's', 'left': 'a', 'right': 'd'}
 
 def simulate_sequence(seq):
+    """
+    Simulate a single game of 2048 using a repeating move sequence until the game ends.
+    Returns the highest tile, final score, the sequence, and the number of moves made.
+    """
     game = Game2048()
     move_count = 0
     seq_idx = 0
@@ -19,14 +23,9 @@ def simulate_sequence(seq):
         if moved:
             move_count += 1
             invalid_moves = 0
-            # Commented out for speed in parallel mode
-            # if move_count % 100 == 0:
-            #     print(f"After {move_count} moves for sequence {[MOVE_LABELS[m] for m in seq]}:")
-            #     game.print_board()
         else:
             invalid_moves += 1
             if invalid_moves >= 4:
-                # print(f"No valid moves for sequence {[MOVE_LABELS[m] for m in seq]}. Ending simulation.")
                 break
         seq_idx += 1
     board, score = game.get_state()
@@ -34,6 +33,10 @@ def simulate_sequence(seq):
     return max_tile, score, seq, move_count
 
 def run_parallel_simulations(seq, runs_per_seq, executor=None):
+    """
+    Run multiple simulations of a given move sequence in parallel.
+    Returns lists of highest tiles and scores for each run.
+    """
     if executor is not None:
         results = list(executor.map(simulate_sequence, [seq]*runs_per_seq))
     else:
@@ -44,6 +47,9 @@ def run_parallel_simulations(seq, runs_per_seq, executor=None):
     return tiles, scores
 
 def interactive_play():
+    """
+    Interactive mode for playing 2048 manually or by entering a move sequence.
+    """
     print("\n=== 2048 Interactive Mode ===")
     print("Enter a sequence of moves (e.g., wasddsw) or leave blank to play manually.")
     seq_input = input("Move sequence (WASD, blank for manual): ").strip().lower()
@@ -91,6 +97,9 @@ def interactive_play():
                 break
 
 def main():
+    """
+    Main entry point for running ML simulation or interactive play.
+    """
     mode = input("Type 'ml' for ML simulation, or 'play' for interactive mode: ").strip().lower()
     if mode == 'play':
         interactive_play()
