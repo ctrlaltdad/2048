@@ -1,16 +1,9 @@
-import sys
-from heuristics import simulate_heuristic
-from ml_sim import run_parallel_simulations, run_parallel_two_phase
-from game_2048 import Game2048, MOVES, MOVE_LABELS
-import numpy as np
-from tqdm import tqdm
-import matplotlib.pyplot as plt
-from visualization import plot_histogram
+# main.py: Entry point for 2048 CLI and simulation modes
+# All imports are now local to avoid circular dependencies and unnecessary imports
 
-def interactive_play():
+def interactive_play(seq_input=None):
+    from game_2048 import Game2048
     print("\n=== 2048 Interactive Mode ===")
-    print("Enter a sequence of moves (e.g., wasddsw) or leave blank to play manually.")
-    seq_input = input("Move sequence (WASD, blank for manual): ").strip().lower()
     valid_keys = {'w', 'a', 's', 'd'}
     game = Game2048()
     game.print_board()
@@ -54,12 +47,26 @@ def interactive_play():
                 print("Game Over!")
                 break
 
+# Define MOVES and MOVE_LABELS here for CLI and visualization
+MOVES = ['up', 'down', 'left', 'right']
+MOVE_LABELS = {'up': 'w', 'down': 's', 'left': 'a', 'right': 'd'}
+
 def main():
-    mode = input("Type 'ml' for ML simulation, 'play' for interactive mode, 'ml2' for two-phase ML mode, or 'heuristic' for heuristic mode: ").strip().lower()
-    if mode == 'play':
-        interactive_play()
+    import numpy as np
+    from heuristics import simulate_heuristic
+    from ml_sim import run_parallel_simulations, run_parallel_two_phase
+    from visualization import plot_histogram
+    print("2048 CLI Modes:")
+    print("  [h] Heuristic simulation")
+    print("  [s] Sequence simulation")
+    print("  [e] Emulate/play the game")
+    mode = input("Choose mode ([h]euristic, [s]imulate, [e]mulate): ").strip().lower()
+    if mode == 'e':
+        print("Emulation mode: play 2048 interactively or with a move sequence.")
+        seq_input = input("Enter move sequence (WASD, blank for manual play): ").strip().lower()
+        interactive_play(seq_input if seq_input else None)
         return
-    if mode == 'heuristic':
+    if mode == 'h':
         print("Heuristic mode: choose from 'corner', 'center', or 'expectimax'.")
         heuristic = input("Heuristic (corner/center/expectimax): ").strip().lower()
         runs = input("Number of runs (default 50): ").strip()
@@ -71,7 +78,23 @@ def main():
         print(f"Percent reaching max tile: {100.0 * sum(1 for t in tiles if t == np.max(tiles)) / len(tiles):.1f}%")
         plot_histogram(tiles, f'Tile Distribution: Heuristic {heuristic}')
         return
-    # ...existing code for ML and ML2 modes can be refactored in here...
+    if mode == 's':
+        print("ML simulation mode: [ml] for single-phase, [ml2] for two-phase.")
+        sim_mode = input("Type 'ml' for ML simulation or 'ml2' for two-phase ML mode: ").strip().lower()
+        if sim_mode == 'ml':
+            print("Starting 2048 ML simulation for sequence lengths 5 to 8...")
+            # ...insert ML simulation code here or call a function...
+            print("[ML simulation not yet implemented in this stub]")
+            return
+        elif sim_mode == 'ml2':
+            print("Two-phase ML mode: test strategies that switch move sequence at a given tile.")
+            # ...insert ML2 simulation code here or call a function...
+            print("[ML2 simulation not yet implemented in this stub]")
+            return
+        else:
+            print("Invalid simulation mode.")
+            return
+    print("Invalid mode. Please choose 'h', 's', or 'e'.")
 
 if __name__ == "__main__":
     main()

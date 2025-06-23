@@ -2,7 +2,9 @@ import itertools
 import numpy as np
 from concurrent.futures import ProcessPoolExecutor
 from tqdm import tqdm
-from game_2048 import Game2048, MOVES
+from game_2048 import Game2048
+
+MOVES = ['up', 'down', 'left', 'right']
 
 def simulate_sequence(seq):
     game = Game2048()

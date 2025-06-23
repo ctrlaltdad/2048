@@ -1,20 +1,22 @@
 import random
 import numpy as np
-from game_2048 import Game2048, MOVES
+from game_2048 import Game2048
+
+MOVES = ['up', 'down', 'left', 'right']
 
 def heuristic_move_corner(game):
     for move in ['down', 'left', 'right', 'up']:
         temp = game.copy()
         if temp.move_tiles(move):
             return move
-    return random.choice(['up', 'down', 'left', 'right'])
+    return random.choice(MOVES)
 
 def heuristic_move_center(game):
     for move in ['down', 'right', 'up', 'left']:
         temp = game.copy()
         if temp.move_tiles(move):
             return move
-    return random.choice(['up', 'down', 'left', 'right'])
+    return random.choice(MOVES)
 
 def heuristic_move_expectimax(game):
     best_move = None
