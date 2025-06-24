@@ -15,33 +15,59 @@ A 2048 game emulator and solution optimizer.
 
 ## Usage
 
-### Interactive Play
-Run:
-```
-python ml_2048.py
-```
-Choose `play` mode. You can:
-- Enter a sequence of moves (e.g., `wasddsw`) to see it repeated until the game ends
-- Or leave blank to play move-by-move (WASD keys)
+Run the main CLI:
 
-### ML Simulation
-Run:
 ```
-python ml_2048.py
+python main.py
 ```
-Choose `ml` mode. The script will:
-- Test all possible move sequences of length 5, 6, 7, and 8
-- Run each sequence 50 times in parallel
-- Report the best average and top tile for each length, with the sequence and % of runs that achieved the top tile
-- Show a graph of results
 
-## Files
-- `game_2048.py`: Core 2048 game logic
-- `ml_2048.py`: ML simulation and interactive CLI
+You will be prompted to choose a mode:
 
-## Customization
-- You can change the number of runs per sequence in `ml_2048.py` (`runs_per_seq`)
-- You can adjust the tested sequence lengths in the `lengths` list
+- `[h]` Heuristic simulation: Run games using a heuristic (corner, center, expectimax).
+- `[s]` ML sequence simulation: Enter two move sequences and only the top X% of games from the first sequence will continue with the second sequence, to try to improve the result. You can set the switch tile, number of runs, and top percent.
+- `[e]` Emulate/play: Play the game interactively or by entering a move sequence (WASD).
+
+### Two-Phase Best Simulation Example
+
+In simulation mode (`[s]`):
+- Enter the first and second move sequences (e.g., `wasd` and `dsaw`).
+- Set the switch tile (default 512), number of runs (default 50), and top percent (default 0.2 = 20%).
+- The second sequence will only run for the top X% of games from the first phase.
+- Results and histograms for both phases will be shown.
+
+### Heuristic Mode Example
+
+In heuristic mode (`[h]`):
+- Choose a heuristic (`corner`, `center`, or `expectimax`).
+- Set the number of runs.
+- See statistics and a histogram of results.
+
+### Emulation Mode Example
+
+In emulation mode (`[e]`):
+- Enter a move sequence (WASD) to play automatically, or press Enter for turn-by-turn manual play.
+
+## File Structure
+
+- `main.py` — CLI entry point, mode selection, and user interaction
+- `game_2048.py` — Core 2048 game logic
+- `heuristics.py` — Heuristic move logic and simulation
+- `ml_sim.py` — ML simulation and two-phase best logic
+- `visualization.py` — Plotting and visualization utilities
+- `results.html` — Output HTML with embedded plots (if generated)
+
+## Requirements
+
+- Python 3.7+
+- numpy
+- matplotlib
+- tqdm
+
+Install requirements with:
+
+```
+pip install numpy matplotlib tqdm
+```
 
 ## License
 Apache License 2.0
