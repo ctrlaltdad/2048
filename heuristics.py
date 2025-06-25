@@ -63,3 +63,43 @@ def simulate_heuristic(heuristic, runs=50):
         tiles.append(np.max(board))
         scores.append(score)
     return tiles, scores
+
+def simulate_two_phase_heuristic(heur1, heur2, runs=50, switch_tile=512):
+    """
+    Run each game with heur1 until a tile >= switch_tile is reached, then switch to heur2.
+    Returns: list of final tiles, list of final scores
+    """
+    from tqdm import tqdm
+    tiles = []
+    scores = []
+    for _ in tqdm(range(runs), desc=f"2-Phase: {heur1}->{heur2}"):
+        game = Game2048()
+        phase = 1
+        while not game.is_game_over() and not game.has_won():
+            board, _ = game.get_state()
+            max_tile = np.max(board)
+            if phase == 1 and max_tile >= switch_tile:
+                phase = 2
+            if phase == 1:
+                if heur1 == 'corner':
+                    move = heuristic_move_corner(game)
+                elif heur1 == 'center':
+                    move = heuristic_move_center(game)
+                elif heur1 == 'expectimax':
+                    move = heuristic_move_expectimax(game)
+                else:
+                    move = random.choice(MOVES)
+            else:
+                if heur2 == 'corner':
+                    move = heuristic_move_corner(game)
+                elif heur2 == 'center':
+                    move = heuristic_move_center(game)
+                elif heur2 == 'expectimax':
+                    move = heuristic_move_expectimax(game)
+                else:
+                    move = random.choice(MOVES)
+            game.move_tiles(move)
+        board, score = game.get_state()
+        tiles.append(np.max(board))
+        scores.append(score)
+    return tiles, scores

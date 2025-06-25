@@ -88,26 +88,38 @@ def show_heatmap_from_tiles(tiles, title='Heatmap: Tile Distribution', show=True
         return (title, img_base64)
     return img_base64
 
-def save_visuals_to_html(plots, filename='results.html', title='2048 Simulation Results'):
+def save_visuals_to_html(solutions, filename='results.html', run_title='2048 Simulation Results'):
+    """
+    solutions: list of dicts, each with keys:
+      'name': str, 'avg': float, 'top': int, 'percent': float, 'plots': list of (title, img_base64)
+    """
     import os
     from datetime import datetime
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    section_header = f'<hr><h2>{title} <span style="font-size:small;">({timestamp})</span></h2>'
+    section_header = f'<hr><h2>{run_title} <span style="font-size:small;">({timestamp})</span></h2>'
     if os.path.exists(filename):
         with open(filename, 'r', encoding='utf-8') as f:
             content = f.read()
-        # Remove the last </body></html> if present
         if content.strip().endswith('</body></html>'):
             content = content.strip()[:-14]
     else:
-        # Start a new HTML file
         content = f'<html><head><title>2048 Simulation Results</title></head><body>\n<h1>2048 Simulation Results</h1>'
-    # Add new section header and plots
+    # Add section header
     content += f'\n{section_header}'
-    for plot_title, img_base64 in plots:
-        content += f'\n<h3>{plot_title}</h3>'
-        content += f'\n<img src="data:image/png;base64,{img_base64}"/><br/>'
-    # Close the HTML
+    # Table of top 5
+    content += '\n<table border="1" cellpadding="4" style="border-collapse:collapse;">'
+    content += '<tr><th>Rank</th><th>Name</th><th>Average Tile</th><th>Std Dev</th><th>Top Tile</th><th>Percent Top</th></tr>'
+    for i, sol in enumerate(solutions):
+        stddev = f'{sol["std"]:.2f}' if "std" in sol else ''
+        content += f'<tr><td>{i+1}</td><td>{sol["name"]}</td><td>{sol["avg"]:.2f}</td><td>{stddev}</td><td>{sol["top"]}</td><td>{sol["percent"]:.1f}%</td></tr>'
+    content += '</table>'
+    # Graphs per solution
+    for i, sol in enumerate(solutions):
+        content += f'<h3>Rank {i+1}: {sol["name"]}</h3>'
+        content += f'<b>Average Tile:</b> {sol["avg"]:.2f} | <b>Top Tile:</b> {sol["top"]} | <b>Percent Top:</b> {sol["percent"]:.1f}%<br>'
+        for plot_title, img_base64 in sol['plots']:
+            content += f'<h4>{plot_title}</h4>'
+            content += f'<img src="data:image/png;base64,{img_base64}"/><br/>'
     content += '\n</body></html>'
     with open(filename, 'w', encoding='utf-8') as f:
         f.write(content)
