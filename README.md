@@ -47,6 +47,31 @@ In heuristic mode (`[h]`):
 In emulation mode (`[e]`):
 - Enter a move sequence (WASD) to play automatically, or press Enter for turn-by-turn manual play.
 
+## New Features (2025)
+
+### Opportunistic Heuristic
+- Added a new heuristic: `opportunistic`. This strategy will always make a move that combines two tiles if possible; otherwise, it falls back to the `corner` strategy. Selectable in all heuristic-based simulation modes.
+
+### Results CSV Logging
+- Every simulation run now appends a row to `results.csv` with:
+  - Timestamp
+  - Unique run ID
+  - Simulation type
+  - Parameters
+  - Highest tile achieved
+  - Percent of runs achieving highest tile
+  - Standard deviation
+  - Simulation duration (seconds)
+- This allows for easy analysis and benchmarking of all runs. You can open or import `results.csv` in any data analysis tool (Excel, pandas, etc).
+
+### 2-Phase Heuristic Simulation
+- In simulation mode, you can now select a 2-phase heuristic: choose two heuristics and a switch tile (e.g., 512). The simulation will use the first heuristic until the switch tile is reached, then switch to the second.
+- Results are reported in both the HTML and CSV outputs, including the heuristic pair and all relevant statistics.
+
+## Usage Notes
+- To use the new opportunistic heuristic, select `opportunistic` when prompted for a heuristic in the CLI.
+- To analyze results, open `results.csv` in your preferred tool.
+
 ## File Structure
 
 - `main.py` — CLI entry point, mode selection, and user interaction
@@ -55,6 +80,7 @@ In emulation mode (`[e]`):
 - `ml_sim.py` — ML simulation and two-phase best logic
 - `visualization.py` — Plotting and visualization utilities
 - `results.html` — Output HTML with embedded plots (if generated)
+- `results.csv` — Output CSV file with simulation run data
 
 ## Requirements
 
@@ -87,6 +113,7 @@ See `TESTING.md` for a full list of test cases and their descriptions.
 - All simulation and heuristic results (histograms, heatmaps) are saved to `results.html`.
 - Each run is appended as a new section with a timestamp and run title.
 - You can open `results.html` in your browser to review all results and graphs from all runs.
+- Additionally, all runs are logged in `results.csv` for analysis.
 
 ## License
 Apache License 2.0

@@ -56,6 +56,22 @@ def main():
     from heuristics import simulate_heuristic, simulate_two_phase_heuristic
     from ml_sim import run_parallel_simulations, run_parallel_two_phase, simulate_two_phase_best
     from visualization import plot_histogram, show_heatmap_from_tiles, save_visuals_to_html
+    import uuid
+    import time
+    import os
+    import csv
+    from datetime import datetime
+    csv_file = 'results.csv'
+    def append_csv_row(sim_type, params, top_tile, percent_top, std, sim_duration_sec):
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        run_id = str(uuid.uuid4())
+        row = [timestamp, run_id, sim_type, params, top_tile, percent_top, std, sim_duration_sec]
+        file_exists = os.path.exists(csv_file)
+        with open(csv_file, 'a', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            if not file_exists or os.stat(csv_file).st_size == 0:
+                writer.writerow(['timestamp','run_id','sim_type','parameters','top_tile','percent_top','std','sim_duration_sec'])
+            writer.writerow(row)
     print("2048 CLI Modes:")
     print("  [h] Heuristic simulation")
     print("  [s] ML sequence simulation")
@@ -71,7 +87,10 @@ def main():
         heuristic = input("Heuristic (corner/center/expectimax): ").strip().lower()
         runs = input("Number of runs (default 50): ").strip()
         runs = int(runs) if runs.isdigit() else 50
+        import time
+        start_time = time.time()
         tiles, scores = simulate_heuristic(heuristic, runs)
+        sim_duration_sec = time.time() - start_time
         top_tile = np.max(tiles)
         top_count = sum(1 for t in tiles if t == top_tile)
         print(f"Heuristic: {heuristic}")
@@ -89,6 +108,15 @@ def main():
             'plots': visuals
         }]
         save_visuals_to_html(solutions, filename='results.html', run_title=f'Heuristic: {heuristic}')
+        # CSV logging
+        append_csv_row(
+            sim_type='heuristic',
+            params=f'heuristic={heuristic},runs={runs}',
+            top_tile=int(top_tile),
+            percent_top=100.0 * top_count / len(tiles),
+            std=float(np.std(tiles)),
+            sim_duration_sec=sim_duration_sec
+        )
         return
     if mode == 's':
         print("Simulation options:")
@@ -133,6 +161,16 @@ def main():
                 for i, sol in enumerate(top5):
                     print(f"  {i+1}. {sol['name']} (avg: {sol['avg']:.2f}, top: {sol['top']}, percent: {sol['percent']:.1f}%)")
                 save_visuals_to_html(top5, filename='results.html', run_title=f'Best {l}-Move Sequences')
+                # CSV logging for each top sequence
+                for sol in top5:
+                    append_csv_row(
+                        sim_type='fixed_sequence',
+                        params=f'sequence={sol["name"]},runs={runs}',
+                        top_tile=sol['top'],
+                        percent_top=sol['percent'],
+                        std=sol['std'],
+                        sim_duration_sec=0  # Placeholder for duration
+                    )
             return
         elif sim_opt == '2':
             from itertools import product
@@ -173,9 +211,18 @@ def main():
                 visuals.append(plot_histogram(best_improved, f'Second Phase {l}-Move (Top)', show=False, return_html=True))
                 visuals.append(show_heatmap_from_tiles(best_improved, f'Heatmap: Second Phase {l}-Move (Top)', show=False, return_html=True))
                 save_visuals_to_html(visuals, 'results.html', title=f'Best Split {l}-Move Sequence')
+                # CSV logging for best split sequence
+                append_csv_row(
+                    sim_type='split_sequence',
+                    params=f'seq1={best_seq1},seq2={best_seq2},runs={runs},top_percent={top_percent}',
+                    top_tile=best_top2,
+                    percent_top=best_top2_pct,
+                    std=float(np.std(best_improved)) if best_improved else 0,
+                    sim_duration_sec=0  # Placeholder for duration
+                )
             return
         elif sim_opt == '3':
-            heuristics = ['corner', 'center', 'expectimax']
+            heuristics = ['corner', 'center', 'expectimax', 'opportunistic']
             runs = input("Number of runs per heuristic (default 20): ").strip()
             runs = int(runs) if runs.isdigit() else 20
             all_solutions = []
@@ -200,7 +247,18 @@ def main():
             all_solutions.sort(key=lambda s: s['avg'], reverse=True)
             top5 = all_solutions[:5]
             print(f"Best heuristic: {top5[0]['name']} (avg tile: {top5[0]['avg']:.2f}, top tile: {top5[0]['top']}, percent: {top5[0]['percent']:.1f}%)")
-            save_visuals_to_html(top5, filename='results.html', run_title='Best Heuristics')
+            # CSV logging for each top heuristic
+            import time
+            start_time = time.time()
+            for sol in top5:
+                append_csv_row(
+                    sim_type='heuristic_compare',
+                    params=f'heuristic={sol["name"]},runs={runs}',
+                    top_tile=sol['top'],
+                    percent_top=sol['percent'],
+                    std=sol['std'],
+                    sim_duration_sec=sim_duration_sec
+                )
             return
         elif sim_opt == '4':
             heuristics = ['corner', 'center', 'expectimax']
@@ -214,7 +272,10 @@ def main():
             runs = int(runs) if runs.isdigit() else 50
             switch_tile = input("Switch to second heuristic at which tile? (default 512): ").strip()
             switch_tile = int(switch_tile) if switch_tile.isdigit() else 512
+            import time
+            start_time = time.time()
             tiles, scores = simulate_two_phase_heuristic(heur1, heur2, runs, switch_tile)
+            sim_duration_sec = time.time() - start_time
             avg = float(np.mean(tiles))
             std = float(np.std(tiles))
             top_tile = int(np.max(tiles))
@@ -236,6 +297,15 @@ def main():
             print(f"2-Phase Heuristic: {heur1}→{heur2} @ {switch_tile}")
             print(f"Top tile: {top_tile} | Percent: {percent:.1f}% | Avg: {avg:.2f} | Std: {std:.2f}")
             save_visuals_to_html(solutions, filename='results.html', run_title=name)
+            # CSV logging for 2-phase heuristic
+            append_csv_row(
+                sim_type='2phase_heuristic',
+                params=f'heur1={heur1},heur2={heur2},runs={runs},switch_tile={switch_tile}',
+                top_tile=top_tile,
+                percent_top=percent,
+                std=std,
+                sim_duration_sec=sim_duration_sec
+            )
             return
         else:
             print("Invalid simulation option.")

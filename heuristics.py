@@ -43,6 +43,19 @@ def heuristic_move_expectimax(game):
         return best_move
     return random.choice(MOVES)
 
+def heuristic_move_opportunistic(game):
+    # Try to find a move that will combine any tiles
+    for move in MOVES:
+        temp = game.copy()
+        if temp.move_tiles(move):
+            # If the move increases the score, it combined tiles
+            _, score_before = game.get_state()
+            _, score_after = temp.get_state()
+            if score_after > score_before:
+                return move
+    # Otherwise, fall back to corner strategy
+    return heuristic_move_corner(game)
+
 def simulate_heuristic(heuristic, runs=50):
     from tqdm import tqdm
     tiles = []
@@ -56,6 +69,8 @@ def simulate_heuristic(heuristic, runs=50):
                 move = heuristic_move_center(game)
             elif heuristic == 'expectimax':
                 move = heuristic_move_expectimax(game)
+            elif heuristic == 'opportunistic':
+                move = heuristic_move_opportunistic(game)
             else:
                 move = random.choice(MOVES)
             game.move_tiles(move)
@@ -87,6 +102,8 @@ def simulate_two_phase_heuristic(heur1, heur2, runs=50, switch_tile=512):
                     move = heuristic_move_center(game)
                 elif heur1 == 'expectimax':
                     move = heuristic_move_expectimax(game)
+                elif heur1 == 'opportunistic':
+                    move = heuristic_move_opportunistic(game)
                 else:
                     move = random.choice(MOVES)
             else:
@@ -96,6 +113,8 @@ def simulate_two_phase_heuristic(heur1, heur2, runs=50, switch_tile=512):
                     move = heuristic_move_center(game)
                 elif heur2 == 'expectimax':
                     move = heuristic_move_expectimax(game)
+                elif heur2 == 'opportunistic':
+                    move = heuristic_move_opportunistic(game)
                 else:
                     move = random.choice(MOVES)
             game.move_tiles(move)
