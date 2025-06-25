@@ -1,10 +1,11 @@
+# NOTE: Do NOT import MOVES from game_2048.py. Define MOVES locally in each file that needs it.
+MOVES = ['up', 'down', 'left', 'right']
+
 import itertools
 import numpy as np
 from concurrent.futures import ProcessPoolExecutor
 from tqdm import tqdm
 from game_2048 import Game2048
-
-MOVES = ['up', 'down', 'left', 'right']
 
 def simulate_sequence(seq):
     game = Game2048()

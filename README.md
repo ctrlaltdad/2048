@@ -69,5 +69,24 @@ Install requirements with:
 pip install numpy matplotlib tqdm
 ```
 
+## Automated Testing
+
+This project includes a test suite for the simulation logic in `ml_sim.py` using `pytest`.
+
+To run the tests:
+
+```
+pip install pytest
+pytest tests/test_ml_sim.py
+```
+
+See `TESTING.md` for a full list of test cases and their descriptions.
+
+## Output and Results
+
+- All simulation and heuristic results (histograms, heatmaps) are saved to `results.html`.
+- Each run is appended as a new section with a timestamp and run title.
+- You can open `results.html` in your browser to review all results and graphs from all runs.
+
 ## License
 Apache License 2.0
