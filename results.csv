@@ -1,2 +1,7 @@
 timestamp,run_id,sim_type,parameters,top_tile,percent_top,std,sim_duration_sec
 2025-06-25 21:47:56,e5875f93-fd50-4f11-ae4b-a8cdc4f278cf,2phase_heuristic,"heur1=opportunistic,heur2=center,runs=300000,switch_tile=1024",1024,0.0003333333333333333,82.53911667140186,14175.864553928375
+2025-06-26 17:17:00,fc00abbd-bddc-4b50-85c5-369bcefefb92,heuristic_compare,"heuristic=Heuristic: monotonicity,runs=100",512,23.0,144.41327362815375,0.0
+2025-06-26 17:17:00,e6ab76bd-23b1-477c-a4ee-89f0eae6cd14,heuristic_compare,"heuristic=Heuristic: corner,runs=100",512,5.0,98.88983769831962,0.0
+2025-06-26 17:17:00,bf2324d1-4eaa-44e1-9664-9f05511b9410,heuristic_compare,"heuristic=Heuristic: center,runs=100",512,4.0,97.5868843646522,0.0
+2025-06-26 17:17:00,0a05b6b1-7ad0-44cf-9ca7-f957c436f6bd,heuristic_compare,"heuristic=Heuristic: opportunistic,runs=100",512,1.0,78.64191248946075,0.0
+2025-06-26 17:17:00,b7cc506b-7adc-497c-9f37-303b1ec1812e,heuristic_compare,"heuristic=Heuristic: expectimax,runs=100",256,2.0,43.57643399820596,0.0

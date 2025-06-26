@@ -56,6 +56,63 @@ def heuristic_move_opportunistic(game):
     # Otherwise, fall back to corner strategy
     return heuristic_move_corner(game)
 
+def heuristic_move_monotonicity(game):
+    # For each move, score the board for monotonicity after the move
+    best_move = None
+    best_score = -float('inf')
+    for move in MOVES:
+        temp = game.copy()
+        if not temp.move_tiles(move):
+            continue
+        board = temp.board
+        # Score monotonicity: sum of differences along rows and columns
+        score = 0
+        # Rows
+        for row in board:
+            score += max(monotonicity_score(row), monotonicity_score(row[::-1]))
+        # Columns
+        for col in board.T:
+            score += max(monotonicity_score(col), monotonicity_score(col[::-1]))
+        grouping = grouping_score(board)
+        # If monotonicity is not perfect, add a bonus for grouping similar tiles
+        if score < 6:
+            score += grouping
+        # If both monotonicity and grouping are low, maximize free spots
+        if score < 6 and grouping < 2:
+            score += 0.1 * np.count_nonzero(board == 0)
+        if score > best_score:
+            best_score = score
+            best_move = move
+    if best_move is not None:
+        return best_move
+    return random.choice(MOVES)
+
+def monotonicity_score(arr):
+    # Returns a score for monotonicity: higher is better
+    inc = sum(arr[i] <= arr[i+1] for i in range(len(arr)-1))
+    dec = sum(arr[i] >= arr[i+1] for i in range(len(arr)-1))
+    return max(inc, dec)
+
+def grouping_score(board):
+    # Reward moves that keep large tiles next to each other, and small tiles together
+    score = 0
+    for i in range(board.shape[0]):
+        for j in range(board.shape[1]):
+            val = board[i, j]
+            if val == 0:
+                continue
+            # Check neighbors
+            for di, dj in [(-1,0),(1,0),(0,-1),(0,1)]:
+                ni, nj = i+di, j+dj
+                if 0 <= ni < board.shape[0] and 0 <= nj < board.shape[1]:
+                    nval = board[ni, nj]
+                    if nval == 0:
+                        continue
+                    # Reward if both are large or both are small
+                    if (val >= 128 and nval >= 128) or (val <= 8 and nval <= 8):
+                        score += 1
+    return score
+
 def simulate_heuristic(heuristic, runs=50):
     from tqdm import tqdm
     tiles = []
@@ -71,6 +128,8 @@ def simulate_heuristic(heuristic, runs=50):
                 move = heuristic_move_expectimax(game)
             elif heuristic == 'opportunistic':
                 move = heuristic_move_opportunistic(game)
+            elif heuristic == 'monotonicity':
+                move = heuristic_move_monotonicity(game)
             else:
                 move = random.choice(MOVES)
             game.move_tiles(move)
@@ -104,6 +163,8 @@ def simulate_two_phase_heuristic(heur1, heur2, runs=50, switch_tile=512):
                     move = heuristic_move_expectimax(game)
                 elif heur1 == 'opportunistic':
                     move = heuristic_move_opportunistic(game)
+                elif heur1 == 'monotonicity':
+                    move = heuristic_move_monotonicity(game)
                 else:
                     move = random.choice(MOVES)
             else:
@@ -115,6 +176,8 @@ def simulate_two_phase_heuristic(heur1, heur2, runs=50, switch_tile=512):
                     move = heuristic_move_expectimax(game)
                 elif heur2 == 'opportunistic':
                     move = heuristic_move_opportunistic(game)
+                elif heur2 == 'monotonicity':
+                    move = heuristic_move_monotonicity(game)
                 else:
                     move = random.choice(MOVES)
             game.move_tiles(move)

@@ -83,8 +83,8 @@ def main():
         interactive_play(seq_input if seq_input else None)
         return
     if mode == 'h':
-        print("Heuristic mode: choose from 'corner', 'center', or 'expectimax'.")
-        heuristic = input("Heuristic (corner/center/expectimax): ").strip().lower()
+        print("Heuristic mode: choose from 'corner', 'center', 'expectimax', 'opportunistic', or 'monotonicity'.")
+        heuristic = input("Heuristic (corner/center/expectimax/opportunistic/monotonicity): ").strip().lower()
         runs = input("Number of runs (default 50): ").strip()
         runs = int(runs) if runs.isdigit() else 50
         import time
@@ -225,18 +225,18 @@ def main():
                 visuals.append(plot_histogram(best_improved, f'Second Phase {l}-Move (Top)', show=False, return_html=True))
                 visuals.append(show_heatmap_from_tiles(best_improved, f'Heatmap: Second Phase {l}-Move (Top)', show=False, return_html=True))
                 save_visuals_to_html(visuals, 'results.html', title=f'Best Split {l}-Move Sequence')
-                # CSV logging for best split sequence
-                append_csv_row(
-                    sim_type='split_sequence',
-                    params=f'seq1={best_seq1},seq2={best_seq2},runs={runs},top_percent={top_percent}',
-                    top_tile=best_top2,
-                    percent_top=best_top2_pct,
-                    std=float(np.std(best_improved)) if best_improved else 0,
-                    sim_duration_sec=0  # Placeholder for duration
-                )
+            sim_duration_sec = time.time() - start_time
+            append_csv_row(
+                sim_type='split_sequence',
+                params=f'seq1={best_seq1},seq2={best_seq2},runs={runs},top_percent={top_percent}',
+                top_tile=best_top2,
+                percent_top=best_top2_pct,
+                std=float(np.std(best_improved)) if best_improved else 0,
+                sim_duration_sec=sim_duration_sec
+            )
             return
         elif sim_opt == '3':
-            heuristics = ['corner', 'center', 'expectimax', 'opportunistic']
+            heuristics = ['corner', 'center', 'expectimax', 'opportunistic', 'monotonicity']
             runs = input("Number of runs per heuristic (default 20): ").strip()
             runs = int(runs) if runs.isdigit() else 20
             all_solutions = []
@@ -264,6 +264,9 @@ def main():
             # CSV logging for each top heuristic
             import time
             start_time = time.time()
+            sim_duration_sec = 0
+            if top5:
+                sim_duration_sec = time.time() - start_time
             for sol in top5:
                 append_csv_row(
                     sim_type='heuristic_compare',
@@ -275,7 +278,7 @@ def main():
                 )
             return
         elif sim_opt == '4':
-            heuristics = ['corner', 'center', 'expectimax', 'opportunistic']
+            heuristics = ['corner', 'center', 'expectimax', 'opportunistic', 'monotonicity']
             print("Available heuristics:", ', '.join(heuristics))
             heur1 = input("First phase heuristic: ").strip().lower()
             heur2 = input("Second phase heuristic: ").strip().lower()
