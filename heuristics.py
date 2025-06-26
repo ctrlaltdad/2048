@@ -57,7 +57,6 @@ def heuristic_move_opportunistic(game):
     return heuristic_move_corner(game)
 
 def heuristic_move_monotonicity(game):
-    # For each move, score the board for monotonicity after the move
     best_move = None
     best_score = -float('inf')
     for move in MOVES:
@@ -65,21 +64,33 @@ def heuristic_move_monotonicity(game):
         if not temp.move_tiles(move):
             continue
         board = temp.board
-        # Score monotonicity: sum of differences along rows and columns
-        score = 0
-        # Rows
-        for row in board:
-            score += max(monotonicity_score(row), monotonicity_score(row[::-1]))
-        # Columns
-        for col in board.T:
-            score += max(monotonicity_score(col), monotonicity_score(col[::-1]))
+        max_tile = np.max(board)
+        # Monotonicity (favor left and up)
+        mono_left = sum(monotonicity_score(row) for row in board)
+        mono_up = sum(monotonicity_score(col) for col in board.T)
+        mono = 4 * (mono_left + mono_up)
+        # Smoothness (penalize big differences)
+        smoothness = -np.sum(np.abs(np.diff(board, axis=0))) - np.sum(np.abs(np.diff(board, axis=1)))
+        # Grouping
         grouping = grouping_score(board)
-        # If monotonicity is not perfect, add a bonus for grouping similar tiles
-        if score < 6:
-            score += grouping
-        # If both monotonicity and grouping are low, maximize free spots
-        if score < 6 and grouping < 2:
-            score += 0.1 * np.count_nonzero(board == 0)
+        # Corner bonus/penalty
+        in_corner = max_tile in [board[0,0], board[0,-1], board[-1,0], board[-1,-1]]
+        corner_bonus = 40 if in_corner else -40
+        # Empty tile bonus
+        empty_bonus = 0.2 * np.count_nonzero(board == 0)
+        # Adjacency of max and second max
+        second_max = np.partition(board.flatten(), -2)[-2]
+        adj_penalty = -20
+        for i in range(board.shape[0]):
+            for j in range(board.shape[1]):
+                if board[i, j] == max_tile:
+                    for di, dj in [(-1,0),(1,0),(0,-1),(0,1)]:
+                        ni, nj = i+di, j+dj
+                        if 0 <= ni < board.shape[0] and 0 <= nj < board.shape[1]:
+                            if board[ni, nj] == second_max:
+                                adj_penalty = 0
+        # Total score
+        score = mono + smoothness + grouping + corner_bonus + empty_bonus + adj_penalty
         if score > best_score:
             best_score = score
             best_move = move
@@ -112,6 +123,18 @@ def grouping_score(board):
                     if (val >= 128 and nval >= 128) or (val <= 8 and nval <= 8):
                         score += 1
     return score
+
+def is_isolated_large_tile(board, threshold=256):
+    for i in range(board.shape[0]):
+        for j in range(board.shape[1]):
+            val = board[i, j]
+            if val >= threshold:
+                neighbors = [board[x, y] for x, y in [
+                    (i-1,j), (i+1,j), (i,j-1), (i,j+1)
+                ] if 0 <= x < board.shape[0] and 0 <= y < board.shape[1]]
+                if all(n < threshold/2 for n in neighbors if n > 0):
+                    return True
+    return False
 
 def simulate_heuristic(heuristic, runs=50):
     from tqdm import tqdm
