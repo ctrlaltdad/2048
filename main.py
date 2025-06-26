@@ -130,6 +130,8 @@ def main():
             runs = input("Number of runs per sequence (default 20): ").strip()
             runs = int(runs) if runs.isdigit() else 20
             all_solutions = []
+            import time
+            start_time = time.time()
             for l in [4, 5, 6]:
                 print(f"Testing all {l}-move sequences...")
                 best_solutions = []
@@ -171,6 +173,16 @@ def main():
                         std=sol['std'],
                         sim_duration_sec=0  # Placeholder for duration
                     )
+            sim_duration_sec = time.time() - start_time
+            for sol in top5:
+                append_csv_row(
+                    sim_type='fixed_sequence',
+                    params=f'sequence={sol["name"]},runs={runs}',
+                    top_tile=sol['top'],
+                    percent_top=sol['percent'],
+                    std=sol['std'],
+                    sim_duration_sec=sim_duration_sec
+                )
             return
         elif sim_opt == '2':
             from itertools import product
@@ -178,6 +190,8 @@ def main():
             runs = int(runs) if runs.isdigit() else 20
             top_percent = input("Top percent to continue (0.2 = 20%, default): ").strip()
             top_percent = float(top_percent) if top_percent else 0.2
+            import time
+            start_time = time.time()
             best_avg = 0
             best_seq1 = None
             best_seq2 = None
@@ -261,7 +275,7 @@ def main():
                 )
             return
         elif sim_opt == '4':
-            heuristics = ['corner', 'center', 'expectimax']
+            heuristics = ['corner', 'center', 'expectimax', 'opportunistic']
             print("Available heuristics:", ', '.join(heuristics))
             heur1 = input("First phase heuristic: ").strip().lower()
             heur2 = input("Second phase heuristic: ").strip().lower()
