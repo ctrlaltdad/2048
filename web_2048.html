@@ -5,44 +5,250 @@
     <title>2048 Python Web</title>
     <style>
         body { font-family: Arial, sans-serif; background: #faf8ef; color: #776e65; }
-        #board { display: grid; grid-template-columns: repeat(4, 80px); grid-gap: 8px; margin: 30px auto; width: 352px; }
-        .tile { width: 80px; height: 80px; background: #cdc1b4; display: flex; align-items: center; justify-content: center; font-size: 2em; font-weight: bold; border-radius: 4px; }
-        .tile-0 { background: #cdc1b4; color: #cdc1b4; }
-        .tile-2 { background: #eee4da; color: #776e65; }
-        .tile-4 { background: #ede0c8; color: #776e65; }
+        #board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            background: #bbada0;
+            padding: 10px;
+            border-radius: 6px;
+            width: 400px;
+            height: 400px;
+            margin: 0 auto;
+        }
+        .tile {
+            background: #cdc1b4;
+            border-radius: 3px;
+            text-align: center;
+            line-height: 90px;
+            font-size: 35px;
+            font-weight: bold;
+            color: #776e65;
+            width: 90px;
+            height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .tile-0 { background: #cdc1b4; color: transparent; }
+        .tile-2 { background: #eee4da; }
+        .tile-4 { background: #ede0c8; }
         .tile-8 { background: #f2b179; color: #f9f6f2; }
         .tile-16 { background: #f59563; color: #f9f6f2; }
         .tile-32 { background: #f67c5f; color: #f9f6f2; }
         .tile-64 { background: #f65e3b; color: #f9f6f2; }
-        .tile-128 { background: #edcf72; color: #f9f6f2; }
-        .tile-256 { background: #edcc61; color: #f9f6f2; }
-        .tile-512 { background: #edc850; color: #f9f6f2; }
-        .tile-1024 { background: #edc53f; color: #f9f6f2; }
-        .tile-2048 { background: #edc22e; color: #f9f6f2; }
+        .tile-128 { background: #edcf72; color: #f9f6f2; font-size: 30px; }
+        .tile-256 { background: #edcc61; color: #f9f6f2; font-size: 30px; }
+        .tile-512 { background: #edc850; color: #f9f6f2; font-size: 30px; }
+        .tile-1024 { background: #edc53f; color: #f9f6f2; font-size: 25px; }
+        .tile-2048 { background: #edc22e; color: #f9f6f2; font-size: 25px; }
         #controls { text-align: center; margin: 20px; }
         button { margin: 0 5px; padding: 10px 20px; font-size: 1em; }
         #analysis { margin: 20px auto; width: 352px; }
         #log { font-size: 0.9em; color: #888; }
+        .heatmap { 
+            display: grid; 
+            grid-template-columns: repeat(4, 80px);
+            grid-gap: 8px;
+            margin: 10px auto;
+            width: 352px;
+        }
+        .heatmap-cell {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            color: #776e65;
+            border-radius: 4px;
+        }
+        .real-time-stats {
+            margin: 10px auto;
+            padding: 10px;
+            background: #f7f7f7;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .settings-panel {
+            background: #f7f7f7;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #776e65;
+        }
+        .settings-group {
+            margin: 10px 0;
+            padding: 10px;
+            background: #fff;
+            border-radius: 4px;
+        }
+        .settings-group h3 {
+            margin: 0 0 10px 0;
+            color: #776e65;
+            font-size: 1.1em;
+        }
+        .weight-control {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+            gap: 10px;
+        }
+        .weight-control label {
+            flex: 1;
+            font-size: 0.9em;
+        }
+        .weight-control input {
+            width: 80px;
+            padding: 4px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .button-primary {
+            background: #776e65;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.2s;
+        }
+        .button-primary:hover {
+            background: #665c57;
+        }
+        .nav-button {
+            background: #8f7a66;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.2s;
+        }
+        .nav-button:hover {
+            background: #776e65;
+        }
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            z-index: 1;
+            border-radius: 4px;
+        }
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+        .dropdown-item {
+            color: #776e65;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            border: none;
+            width: 100%;
+            text-align: left;
+            background: none;
+            cursor: pointer;
+        }
+        .dropdown-item:hover {
+            background-color: #f1f1f1;
+        }
+        select {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 6px;
+            color: #776e65;
+        }
+        select:focus {
+            outline: none;
+            border-color: #776e65;
+        }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #776e65;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            display: none;
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        /* Disabled states */
+        button:disabled,
+        select:disabled,
+        input:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .nav-button:disabled {
+            background: #ccc;
+            pointer-events: none;
+        }
+        
+        .dropdown-item:disabled {
+            color: #ccc;
+            background: #f9f9f9;
+            cursor: not-allowed;
+        }
+        
+        .weight-control input:disabled {
+            background: #f5f5f5;
+            border-color: #ddd;
+        }
+        
+        .button-primary:disabled {
+            background: #ccc;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
     <h1 style="text-align:center;">2048 Python Web</h1>
-    <div id="controls">
-        <button id="btn-play" onclick="setMode('play')">Play</button>
-        <button id="btn-heuristic" onclick="setMode('heuristic')">Emulate Heuristic</button>
-        <button id="btn-analysis" onclick="setMode('analysis')">Run Analysis</button>
-        <select id="heuristicSelect" onchange="updateDescription()">
-            <option value="monotonicity">Monotonicity</option>
-            <option value="corner">Corner</option>
-            <option value="center">Center</option>
-            <option value="expectimax">Expectimax</option>
-            <option value="opportunistic">Opportunistic</option>
-            <option value="mlsim">ML Sim</option>
-        </select>
-        <label style="margin-left:10px;"><input type="checkbox" id="twophase" onchange="updateDescription()"> Two-Phase</label>
-        <button id="btn-reset" onclick="resetGame()">Reset</button>
-        <button id="btn-csv" onclick="exportResults('csv')">Export CSV</button>
-        <button id="btn-html" onclick="exportResults('html')">Export HTML</button>
+    <div class="nav-bar" style="background: #776e65; padding: 10px 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto;">
+            <div style="display: flex; gap: 10px;">
+                <button id="btn-play" class="nav-button">Play</button>
+                <button id="btn-heuristic" class="nav-button">Emulate Heuristic</button>
+                <button id="btn-analysis" class="nav-button">Run Analysis</button>
+            </div>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <select id="heuristicSelect" onchange="updateDescription()" style="padding: 6px; border-radius: 4px; border: none;">
+                    <option value="monotonicity">Monotonicity</option>
+                    <option value="corner">Corner</option>
+                    <option value="center">Center</option>
+                    <option value="expectimax">Expectimax</option>
+                    <option value="opportunistic">Opportunistic</option>
+                    <option value="smoothness">Smoothness</option>
+                    <option value="weighted">Weighted Combo</option>
+                </select>
+                <label style="color: white;"><input type="checkbox" id="twophase" onchange="updateDescription()"> Two-Phase</label>
+                <button id="btn-reset" class="nav-button">Reset</button>
+                <div class="dropdown">
+                    <button class="nav-button">Export ▼</button>
+                    <div class="dropdown-content">
+                        <button class="dropdown-item" onclick="exportResults('csv')">Export CSV</button>
+                        <button class="dropdown-item" onclick="exportResults('html')">Export HTML</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     <div style="display: flex; justify-content: center; align-items: flex-start;">
         <div style="min-width: 400px;">
@@ -54,6 +260,7 @@
             <div style="display: flex; border-bottom: 1px solid #ddd;">
                 <button id="tab-desc" onclick="showTab('desc')" style="flex:1; padding:10px; border:none; background:#eee; font-weight:bold; transition: font-weight 0.2s;">Description</button>
                 <button id="tab-stats" onclick="showTab('stats')" style="flex:1; padding:10px; border:none; background:#f7f7f7; font-weight:normal; transition: font-weight 0.2s;">Statistics</button>
+                <button id="tab-settings" onclick="showTab('settings')" style="flex:1; padding:10px; border:none; background:#f7f7f7; font-weight:normal; transition: font-weight 0.2s;">Settings</button>
             </div>
             <div id="tab-content-desc" style="padding: 16px;">
                 <b>Mode:</b> <span id="desc-mode">Play</span><br><br>
@@ -63,11 +270,81 @@
             <div id="tab-content-stats" style="display:none; padding: 16px;">
                 <div id="stats-content">No statistics yet.</div>
             </div>
+            <div id="tab-content-settings" style="display:none; padding: 16px;">
+                <div class="settings-panel">
+                    <h3>Analysis Settings</h3>
+                    <div class="settings-group">
+                        <h3>Run Configuration</h3>
+                        <div class="weight-control">
+                            <label for="runCount">Number of Runs:</label>
+                            <input type="number" id="runCount" value="20" min="1" max="1000">
+                        </div>
+                        <div class="weight-control">
+                            <label for="pauseDuration">Emulation Speed (seconds):</label>
+                            <input type="number" id="pauseDuration" value="0.5" step="0.1" min="0.1" max="5">
+                        </div>
+                    </div>
+                    <div class="settings-group" id="weightControls">
+                        <h3>Strategy Weights</h3>
+                        <div class="weight-control">
+                            <label for="weightMonotonicity">Monotonicity Weight:</label>
+                            <input type="number" id="weightMonotonicity" value="1.0" step="0.1" min="0" max="5">
+                        </div>
+                        <div class="weight-control">
+                            <label for="weightCorner">Corner Weight:</label>
+                            <input type="number" id="weightCorner" value="0.0" step="0.1" min="0" max="5">
+                        </div>
+                        <div class="weight-control">
+                            <label for="weightCenter">Center Weight:</label>
+                            <input type="number" id="weightCenter" value="0.0" step="0.1" min="0" max="5">
+                        </div>
+                        <div class="weight-control">
+                            <label for="weightExpectimax">Expectimax Weight:</label>
+                            <input type="number" id="weightExpectimax" value="0.0" step="0.1" min="0" max="5">
+                        </div>
+                        <div class="weight-control">
+                            <label for="weightOpportunistic">Opportunistic Weight:</label>
+                            <input type="number" id="weightOpportunistic" value="0.0" step="0.1" min="0" max="5">
+                        </div>
+                        <div class="weight-control">
+                            <label for="weightSmoothness">Smoothness Weight:</label>
+                            <input type="number" id="weightSmoothness" value="0.1" step="0.1" min="0" max="5">
+                        </div>
+                        <div class="weight-control">
+                            <label for="weightEmpty">Empty Tiles Weight:</label>
+                            <input type="number" id="weightEmpty" value="2.7" step="0.1" min="0" max="5">
+                        </div>
+                        <div class="weight-control">
+                            <label for="weightMerge">Merge Weight:</label>
+                            <input type="number" id="weightMerge" value="1.0" step="0.1" min="0" max="5">
+                        </div>
+                    </div>
+                    <button class="button-primary" onclick="applySettings()">Apply Settings</button>
+                </div>
+            </div>
         </div>
     </div>
     <script>
-        // --- Minimal 2048 logic in JS for browser play ---
+        // --- Global variables ---
         let board, score, mode = 'play', interval = null;
+        
+        // --- Mode switching and initialization ---
+        function setMode(m) {
+            mode = m;
+            clearInterval(interval);
+            document.getElementById('analysis').innerHTML = '';
+            if(mode==='heuristic') {
+                startHeuristicEmulation();
+            }
+            if(mode==='analysis') {
+                runAnalysis();
+            }
+            drawBoard();
+            updateDescription();
+            if(mode!=='analysis') updateStats('No statistics yet.');
+        }
+        
+        // --- Minimal 2048 logic in JS for browser play ---
         function emptyBoard() {
             board = Array.from({length:4},()=>Array(4).fill(0));
             score = 0;
@@ -84,10 +361,43 @@
             let html = '';
             for(let i=0;i<4;i++) for(let j=0;j<4;j++) {
                 let v = board[i][j];
-                html += `<div class="tile tile-${v}">${v? v : ''}</div>`;
+                // Always create a tile div, even for empty cells (value 0)
+                html += `<div class="tile ${v ? 'tile-' + v : 'tile-0'}">${v || ''}</div>`;
             }
             document.getElementById('board').innerHTML = html;
-            document.getElementById('log').innerText = 'Score: ' + score;
+            
+            // Add real-time stats
+            let maxTile = Math.max(...board.flat());
+            let emptyCount = board.flat().filter(x=>x===0).length;
+            let statsHtml = `
+                <div class="real-time-stats">
+                    Score: ${score} | Max Tile: ${maxTile} | Empty: ${emptyCount}
+                    ${mode === 'heuristic' ? '<br>Strategy: ' + document.getElementById('heuristicSelect').value : ''}
+                </div>`;
+            
+            // Add heatmap showing tile frequency
+            if(window._tileHistory === undefined) window._tileHistory = Array(16).fill(0);
+            let pos = 0;
+            for(let i=0;i<4;i++) for(let j=0;j<4;j++) {
+                if(board[i][j] > 0) window._tileHistory[pos]++;
+                pos++;
+            }
+            
+            let maxFreq = Math.max(...window._tileHistory);
+            let heatmapHtml = '<div class="heatmap">';
+            pos = 0;
+            for(let i=0;i<4;i++) for(let j=0;j<4;j++) {
+                let intensity = maxFreq ? window._tileHistory[pos]/maxFreq : 0;
+                let bgcolor = `rgba(242,177,121,${intensity})`;
+                heatmapHtml += `
+                    <div class="heatmap-cell" style="background:${bgcolor}">
+                        ${Math.round(intensity*100)}%
+                    </div>`;
+                pos++;
+            }
+            heatmapHtml += '</div>';
+            
+            document.getElementById('log').innerHTML = statsHtml + heatmapHtml;
         }
         function move(dir) {
             let moved = false;
@@ -149,104 +459,318 @@
         function showTab(tab) {
             document.getElementById('tab-content-desc').style.display = (tab==='desc') ? '' : 'none';
             document.getElementById('tab-content-stats').style.display = (tab==='stats') ? '' : 'none';
+            document.getElementById('tab-content-settings').style.display = (tab==='settings') ? '' : 'none';
+            
             document.getElementById('tab-desc').style.background = (tab==='desc') ? '#eee' : '#f7f7f7';
             document.getElementById('tab-stats').style.background = (tab==='stats') ? '#eee' : '#f7f7f7';
+            document.getElementById('tab-settings').style.background = (tab==='settings') ? '#eee' : '#f7f7f7';
+            
             document.getElementById('tab-desc').style.fontWeight = (tab==='desc') ? 'bold' : 'normal';
             document.getElementById('tab-stats').style.fontWeight = (tab==='stats') ? 'bold' : 'normal';
+            document.getElementById('tab-settings').style.fontWeight = (tab==='settings') ? 'bold' : 'normal';
         }
-        // --- Heuristic emulation mode ---
-        function startHeuristicEmulation() {
-            clearInterval(interval);
-            interval = setInterval(()=>{
-                if(mode!=='heuristic') { clearInterval(interval); return; }
-                let heur = document.getElementById('heuristicSelect').value;
-                let twophase = document.getElementById('twophase').checked;
-                let move;
-                if(heur==="mlsim") move = pickMLSimMove();
-                else if(twophase) move = pickTwoPhaseMove(heur);
-                else move = pickHeuristicMove(heur);
-                if(move) moveBoard(move);
-                drawBoard();
-                if(isGameOver()) {
-                    clearInterval(interval);
-                    document.getElementById('log').innerText += ' | Game Over!';
+
+        // Settings management
+        let gameSettings = {
+            runs: 20,
+            pauseDuration: 0.5, // Default pause duration in seconds
+            weights: {
+                monotonicity: 1.0,
+                corner: 0.0,
+                center: 0.0,
+                expectimax: 0.0,
+                opportunistic: 0.0,
+                smoothness: 0.1,
+                empty: 2.7,
+                merge: 1.0
+            }
+        };
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            // Show the toast
+            setTimeout(() => {
+                toast.style.display = 'block';
+                setTimeout(() => {
+                    toast.style.display = 'none';
+                    document.body.removeChild(toast);
+                }, 3000);
+            }, 100);
+        }
+
+        // Update applySettings to use toast
+        function applySettings() {
+            gameSettings.runs = parseInt(document.getElementById('runCount').value) || 20;
+            gameSettings.pauseDuration = parseFloat(document.getElementById('pauseDuration').value) || 0.5;
+            gameSettings.weights = {
+                monotonicity: parseFloat(document.getElementById('weightMonotonicity').value) || 1.0,
+                corner: parseFloat(document.getElementById('weightCorner').value) || 0.0,
+                center: parseFloat(document.getElementById('weightCenter').value) || 0.0,
+                expectimax: parseFloat(document.getElementById('weightExpectimax').value) || 0.0,
+                opportunistic: parseFloat(document.getElementById('weightOpportunistic').value) || 0.0,
+                smoothness: parseFloat(document.getElementById('weightSmoothness').value) || 0.1,
+                empty: parseFloat(document.getElementById('weightEmpty').value) || 2.7,
+                merge: parseFloat(document.getElementById('weightMerge').value) || 1.0
+            };
+            
+            // Update emulation speed if currently running
+            if(interval) {
+                clearInterval(interval);
+                startHeuristicEmulation();
+            }
+            
+            showToast('Settings applied successfully!');
+        }
+
+        // Update evalWeightedStrategy to use custom weights
+        function evalWeightedStrategy(b) {
+            let totalScore = 0;
+            let weights = gameSettings.weights;
+            
+            // Only calculate scores for heuristics with weight > 0 (efficiency)
+            if (weights.monotonicity > 0) {
+                totalScore += evalMonotonicity(b) * weights.monotonicity;
+            }
+            
+            if (weights.corner > 0) {
+                totalScore += evalCorner(b) * weights.corner;
+            }
+            
+            if (weights.center > 0) {
+                totalScore += evalCenter(b) * weights.center;
+            }
+            
+            if (weights.expectimax > 0) {
+                totalScore += evalExpectimax(b) * weights.expectimax;
+            }
+            
+            if (weights.opportunistic > 0) {
+                totalScore += evalOpportunistic(b) * weights.opportunistic;
+            }
+            
+            if (weights.smoothness > 0) {
+                totalScore += evalSmoothness(b) * weights.smoothness;
+            }
+            
+            if (weights.empty > 0) {
+                let emptyScore = b.flat().filter(x=>x===0).length * 100;
+                totalScore += emptyScore * weights.empty;
+            }
+            
+            if (weights.merge > 0) {
+                let mergeScore = 0;
+                for(let i=0; i<4; i++) {
+                    for(let j=0; j<3; j++) {
+                        if(b[i][j] && b[i][j]===b[i][j+1]) mergeScore += b[i][j];
+                        if(b[j][i] && b[j][i]===b[j+1][i]) mergeScore += b[j][i];
+                    }
                 }
-            }, 300);
+                totalScore += mergeScore * weights.merge;
+            }
+            
+            return totalScore;
         }
-        // --- Analysis mode ---
+
+        // Update runAnalysis to use custom run count
         function runAnalysis() {
             let results = [];
-            let runs = 20;
+            let runs = gameSettings.runs; // Use custom run count
             let heur = document.getElementById('heuristicSelect').value;
             let twophase = document.getElementById('twophase').checked;
             let allStats = [];
             let runIdx = 0;
-            let paramSummary = `<div style='margin-bottom:8px;'><b>Parameters:</b> Heuristic: <b>${heur}</b> | Two-Phase: <b>${twophase?"On":"Off"}</b></div>`;
+            let movesToTile = {};
+            let wins = 0;
+            
+            // Create parameter display div with bold styling
+            // Show parameters and setup initial display
+            // Create container divs that we'll update during analysis
+            document.getElementById('analysis').innerHTML = `
+                <div id="analysis-params"></div>
+                <div id="analysis-progress"></div>
+                <div id="analysis-stats" style="margin-top:15px;"></div>
+            `;
+            
+            // Update the parameter display
+            document.getElementById('analysis-params').innerHTML = `
+                <div style="background:#f0f0f0; padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #776e65">
+                    <div style="font-size:1.1em; margin-bottom:8px;"><b>Analysis Parameters</b></div>
+                    <div><b>Strategy:</b> ${heur}</div>
+                    <div><b>Two-Phase Mode:</b> ${twophase ? "Enabled" : "Disabled"}</div>
+                    <div><b>Total Runs:</b> ${runs}</div>
+                </div>
+            `;
+            
             setControlsDisabled(true);
-            function updateProgressBar() {
-                let percent = Math.floor(100 * runIdx / runs);
-                let bar = `<div style='width:100%;background:#eee;height:18px;border-radius:8px;overflow:hidden;margin-bottom:8px;'><div id='progress-inner' style='width:${percent}%;background:#f2b179;height:100%;transition:width 0.2s;'></div></div>`;
-                return bar;
+
+            function updateStats(results, moves) {
+                // Add robust null, undefined, and array checks
+                if (!results || !moves || !Array.isArray(results) || !Array.isArray(moves) || results.length === 0 || moves.length === 0) {
+                    return {
+                        maxTile: 0,
+                        avgMoves: 0,
+                        winRate: '0.0',
+                        movesToTile: {}
+                    };
+                }
+                
+                let stats = {
+                    maxTile: Math.max(...results),
+                    avgMoves: moves.reduce((a,b)=>a+b,0)/moves.length,
+                    winRate: (runIdx > 0 ? (wins/runIdx * 100) : 0).toFixed(1),
+                    movesToTile: {}
+                };
+                
+                for(let tile in movesToTile) {
+                    if(movesToTile[tile] && movesToTile[tile].length > 0) {
+                        stats.movesToTile[tile] = Math.round(movesToTile[tile].reduce((a,b)=>a+b,0)/movesToTile[tile].length);
+                    }
+                }
+                return stats;
             }
+
             function doRun() {
                 emptyBoard();
-                drawBoard(); // Ensure board updates for each run
+                drawBoard(); // Show initial board
                 let steps = 0;
+                let seenTiles = new Set();
+                
                 function doStep() {
                     let move;
-                    if(heur==="mlsim") move = pickMLSimMove();
-                    else if(twophase) move = pickTwoPhaseMove(heur);
+                    if(twophase) move = pickTwoPhaseMove(heur);
                     else move = pickHeuristicMove(heur);
+                    
                     if(move && !isGameOver() && steps<1000) {
-                        moveBoard(move);
-                        drawBoard(); // Ensure board updates for each step
+                        let moved = moveBoard(move);
+                        if (!moved) { // If move was invalid, try other moves
+                            let dirs = ['up', 'down', 'left', 'right'];
+                            for (let dir of dirs) {
+                                if (dir !== move && moveBoard(dir)) {
+                                    break;
+                                }
+                            }
+                        }
+                        drawBoard(); // Update board visually
                         steps++;
+                        
+                        // Track moves needed to reach each tile value
+                        let currentMax = Math.max(...board.flat());
+                        if(!seenTiles.has(currentMax)) {
+                            seenTiles.add(currentMax);
+                            movesToTile[currentMax] = movesToTile[currentMax] || [];
+                            movesToTile[currentMax].push(steps);
+                            if(currentMax >= 2048) wins++;
+                        }
+                        
+                        // Update progress more frequently
+                        document.getElementById('analysis-progress').innerHTML = `
+                            <div style="margin: 10px 0;">
+                                <b>Current Run:</b> ${runIdx + 1}/${runs}<br>
+                                <b>Current Game:</b> Move ${steps}, Max Tile: ${currentMax}
+                            </div>
+                            <div style="background: #eee; border-radius: 4px; height: 20px; margin-top: 5px;">
+                                <div style="background: #776e65; width: ${(runIdx/runs*100)}%; height: 100%; border-radius: 4px;"></div>
+                            </div>
+                        `;
+                        
                         setTimeout(doStep, 0);
                     } else {
                         let maxTile = Math.max(...board.flat());
-                        allStats.push({maxTile, score});
+                        allStats.push({maxTile, score, moves: steps});
                         results.push(maxTile);
                         runIdx++;
-                        document.getElementById('analysis').innerHTML = paramSummary + updateProgressBar() + `<i>Running analysis... (${runIdx}/${runs})</i>`;
+                        
+                        let currentStats = updateStats(results, allStats.map(s => s.moves));
+                        let statsHtml = `<div style='margin:8px 0'>
+                            Win Rate: ${currentStats.winRate}% | 
+                            Avg Moves: ${Math.round(currentStats.avgMoves)}</div>`;
+                        
+                        // Update each section individually
+                        document.getElementById('analysis-params').innerHTML = getAnalysisParamSummary(heur, twophase);
+                        document.getElementById('analysis-progress').innerHTML = updateProgressBar(runIdx, runs);
+                        document.getElementById('analysis-stats').innerHTML = statsHtml + 
+                            `<i>Running analysis... (${runIdx}/${runs})</i>`;
+                            
                         if(runIdx < runs) {
                             setTimeout(doRun, 0);
                         } else {
                             let avg = results.reduce((a,b)=>a+b,0)/results.length;
-                            let html = paramSummary + `<b>Analysis for ${heur}${twophase?" (Two-Phase)":""}:</b><br>Runs: ${runs}<br>Average max tile: ${avg.toFixed(2)}<br>Distribution: <br>`;
+                            let finalStats = updateStats(results, allStats.map(s => s.moves));
+                            
+                            let html = getAnalysisParamSummary(heur, twophase) + 
+                                `<b>Analysis for ${heur}${twophase?" (Two-Phase)":""}:</b><br>
+                                Runs: ${runs}<br>
+                                Win Rate: ${finalStats.winRate}%<br>
+                                Average Max Tile: ${avg.toFixed(2)}<br>
+                                Average Moves: ${Math.round(finalStats.avgMoves)}<br>
+                                <b>Moves to reach tile:</b><br>`;
+                            
+
+                            // Add moves-to-tile stats
+                            Object.keys(finalStats.movesToTile)
+                                .sort((a,b)=>Number(a)-Number(b))
+                                .forEach(tile => {
+                                    html += `${tile}: ${finalStats.movesToTile[tile]} moves<br>`;
+                                });
+                            
+
+                            html += '<b>Distribution:</b><br>';
                             let dist = {};
                             for(let v of results) dist[v] = (dist[v]||0)+1;
-                            for(let k of Object.keys(dist).sort((a,b)=>a-b)) html += `${k}: ${dist[k]}<br>`;
+                            for(let k of Object.keys(dist).sort((a,b)=>a-b)) 
+                                html += `${k}: ${dist[k]} (${(dist[k]/runs*100).toFixed(1)}%)<br>`;
+                            
+
                             html += `<canvas id='distChart' width='300' height='120'></canvas>`;
                             document.getElementById('analysis').innerHTML = html;
                             updateStats(html);
                             drawDistChart(dist);
-                            window._lastResults = {heur, twophase, runs, results, allStats, dist, avg};
+                            window._lastResults = {
+                                heur, twophase, runs, results, allStats, 
+                                dist, avg, winRate: finalStats.winRate,
+                                movesToTile: finalStats.movesToTile
+                            };
                             drawBoard();
                             setControlsDisabled(false);
                         }
                     }
                 }
-                setTimeout(doStep, 0); // Schedule step to allow UI update
+                setTimeout(doStep, 0);
             }
-            document.getElementById('analysis').innerHTML = paramSummary + updateProgressBar() + '<i>Running analysis...</i>';
+            // Initial update of analysis sections
+            document.getElementById('analysis-params').innerHTML = getAnalysisParamSummary(heur, twophase);
+            document.getElementById('analysis-progress').innerHTML = updateProgressBar(0, runs);
+            document.getElementById('analysis-stats').innerHTML = '<i>Running analysis...</i>';
             runIdx = 0;
-            setTimeout(doRun, 0); // Schedule first run to allow UI update
+            setTimeout(doRun, 0);
         }
-        // --- Mode switching ---
-        function setMode(m) {
-            mode = m;
-            clearInterval(interval);
-            document.getElementById('analysis').innerHTML = '';
-            if(mode==='heuristic') {
-                startHeuristicEmulation();
-            }
-            if(mode==='analysis') {
-                runAnalysis();
-            }
-            drawBoard();
-            updateDescription();
-            if(mode!=='analysis') updateStats('No statistics yet.');
+        function startHeuristicEmulation() {
+            if(interval) clearInterval(interval);
+            interval = setInterval(() => {
+                let heur = document.getElementById('heuristicSelect').value;
+                let twophase = document.getElementById('twophase').checked;
+                let move;
+                
+                if(twophase) {
+                    move = pickTwoPhaseMove(heur);
+                } else {
+                    move = pickHeuristicMove(heur);
+                }
+                
+                if(move && !isGameOver()) {
+                    moveBoard(move);
+                    drawBoard();
+                } else {
+                    clearInterval(interval);
+                    resetGame();
+                }
+            }, gameSettings.pauseDuration * 1000); // Convert seconds to milliseconds
         }
+
         // --- Update description pane ---
         function updateDescription() {
             let modeMap = {play:'Manual Play', heuristic:'Heuristic Emulation', analysis:'Analysis'};
@@ -256,7 +780,8 @@
                 center: 'Center: Favors moves toward the center.',
                 expectimax: 'Expectimax: Looks ahead using expected value.',
                 opportunistic: 'Opportunistic: Combines tiles whenever possible.',
-                mlsim: 'ML Sim: Weighted feature-based move selection.'
+                smoothness: 'Smoothness: Prefers boards where neighboring tiles have similar values.',
+                weighted: 'Weighted Combo: Combines multiple strategies with weights.'
             };
             let twophase = document.getElementById('twophase').checked;
             let heur = document.getElementById('heuristicSelect').value;
@@ -272,20 +797,437 @@
             // For future: enable/disable controls if needed
         }
         emptyBoard(); drawBoard();
+
+        // Add event listeners
+        document.getElementById('btn-play').addEventListener('click', () => setMode('play'));
+        document.getElementById('btn-heuristic').addEventListener('click', () => setMode('heuristic'));
+        document.getElementById('btn-analysis').addEventListener('click', () => setMode('analysis'));
         document.getElementById('heuristicSelect').addEventListener('change', updateDescription);
         document.getElementById('twophase').addEventListener('change', updateDescription);
+        
         // Initial tab and desc
         showTab('desc');
         updateDescription();
         function setControlsDisabled(disabled) {
-            document.getElementById('btn-play').disabled = disabled;
-            document.getElementById('btn-heuristic').disabled = disabled;
-            document.getElementById('btn-analysis').disabled = disabled;
-            document.getElementById('heuristicSelect').disabled = disabled;
-            document.getElementById('twophase').disabled = disabled;
-            document.getElementById('btn-reset').disabled = disabled;
-            document.getElementById('btn-csv').disabled = disabled;
-            document.getElementById('btn-html').disabled = disabled;
+            // Helper function to safely disable an element
+            const safeDisable = (id) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.disabled = disabled;
+                }
+            };
+
+            // Disable main control buttons
+            safeDisable('btn-play');
+            safeDisable('btn-heuristic');
+            safeDisable('btn-analysis');
+            safeDisable('btn-reset');
+
+            // Disable selects and checkboxes
+            safeDisable('heuristicSelect');
+            safeDisable('twophase');
+            safeDisable('runCount');
+            safeDisable('pauseDuration');
+            
+            // Disable weight inputs
+            safeDisable('weightMonotonicity');
+            safeDisable('weightCorner');
+            safeDisable('weightCenter');
+            safeDisable('weightExpectimax');
+            safeDisable('weightOpportunistic');
+            safeDisable('weightSmoothness');
+            safeDisable('weightEmpty');
+            safeDisable('weightMerge');
+
+            // Get all buttons within dropdowns
+            const dropdownButtons = document.querySelectorAll('.dropdown-item');
+            dropdownButtons.forEach(button => {
+                button.disabled = disabled;
+            });
+        }
+
+        // --- Evaluation functions for heuristics ---
+        function evalMonotonicity(b) {
+            let score = 0;
+            
+            // Check row monotonicity (both increasing and decreasing)
+            for(let i = 0; i < 4; i++) {
+                let row = b[i];
+                
+                // Check if row is monotonically increasing (left to right)
+                let increasing = true;
+                let decreasing = true;
+                
+                for(let j = 0; j < 3; j++) {
+                    if(row[j] !== 0 && row[j+1] !== 0) {
+                        if(row[j] > row[j+1]) increasing = false;
+                        if(row[j] < row[j+1]) decreasing = false;
+                    }
+                }
+                
+                // Reward monotonic rows
+                if(increasing || decreasing) {
+                    score += 100;
+                    // Extra reward for fully filled monotonic rows
+                    if(row.every(cell => cell !== 0)) {
+                        score += 200;
+                    }
+                }
+            }
+            
+            // Check column monotonicity (both increasing and decreasing)
+            for(let j = 0; j < 4; j++) {
+                let col = [b[0][j], b[1][j], b[2][j], b[3][j]];
+                
+                // Check if column is monotonically increasing (top to bottom)
+                let increasing = true;
+                let decreasing = true;
+                
+                for(let i = 0; i < 3; i++) {
+                    if(col[i] !== 0 && col[i+1] !== 0) {
+                        if(col[i] > col[i+1]) increasing = false;
+                        if(col[i] < col[i+1]) decreasing = false;
+                    }
+                }
+                
+                // Reward monotonic columns
+                if(increasing || decreasing) {
+                    score += 100;
+                    // Extra reward for fully filled monotonic columns
+                    if(col.every(cell => cell !== 0)) {
+                        score += 200;
+                    }
+                }
+            }
+            
+            return score;
+        }
+
+        function evalCorner(b) {
+            let score = 0;
+            let corners = [b[0][0], b[0][3], b[3][0], b[3][3]];
+            let maxCorner = Math.max(...corners);
+            score += (maxCorner === 0) ? 10 : (maxCorner * 2);
+            return score;
+        }
+
+        function evalCenter(b) {
+            let score = 0;
+            for(let i=0;i<4;i++) {
+                for(let j=0;j<4;j++) {
+                    if(i===1||i===2) {
+                        if(j===1||j===2) score += (b[i][j]===0) ? 5 : b[i][j];
+                    }
+                }
+            }
+            return score;
+        }
+
+        function evalExpectimax(b) {
+            // Simplified Expectimax: consider only one level of depth
+            let score = 0;
+            for(let i=0;i<4;i++) {
+                for(let j=0;j<3;j++) {
+                    if(b[i][j] && b[i][j]===b[i][j+1]) score += b[i][j] * 2;
+                }
+            }
+            for(let j=0;j<4;j++) {
+                for(let i=0;i<3;i++) {
+                    if(b[i][j] && b[i][j]===b[i+1][j]) score += b[i][j] * 2;
+                }
+            }
+            return score;
+        }
+
+        function evalOpportunistic(b) {
+            let score = 0;
+            for(let i=0;i<4;i++) {
+                for(let j=0;j<3;j++) {
+                    if(b[i][j] && b[i][j]===b[i][j+1]) score += b[i][j];
+                }
+            }
+            for(let j=0;j<4;j++) {
+                for(let i=0;i<3;i++) {
+                    if(b[i][j] && b[i][j]===b[i+1][j]) score += b[i][j];
+                }
+            }
+            return score;
+        }
+
+        function evalSmoothness(b) {
+            let smoothness = 0;
+            
+            for (let x = 0; x < 4; x++) {
+                for (let y = 0; y < 4; y++) {
+                    if (b[x][y] !== 0) {
+                        let value = Math.log(b[x][y]) / Math.log(2);
+                        
+                        // Check right direction (direction = 1)
+                        let rightX = x;
+                        let rightY = y + 1;
+                        // Find the next occupied cell to the right
+                        while (rightY < 4 && b[rightX][rightY] === 0) {
+                            rightY++;
+                        }
+                        if (rightY < 4 && b[rightX][rightY] !== 0) {
+                            let targetValue = Math.log(b[rightX][rightY]) / Math.log(2);
+                            smoothness -= Math.abs(value - targetValue);
+                        }
+                        
+                        // Check down direction (direction = 2)
+                        let downX = x + 1;
+                        let downY = y;
+                        // Find the next occupied cell downward
+                        while (downX < 4 && b[downX][downY] === 0) {
+                            downX++;
+                        }
+                        if (downX < 4 && b[downX][downY] !== 0) {
+                            let targetValue = Math.log(b[downX][downY]) / Math.log(2);
+                            smoothness -= Math.abs(value - targetValue);
+                        }
+                    }
+                }
+            }
+            
+            return smoothness;
+        }
+
+        // Update heuristic map
+        let heurMap = {
+            monotonicity: evalMonotonicity,
+            corner: evalCorner,
+            center: evalCenter,
+            expectimax: evalExpectimax,
+            opportunistic: evalOpportunistic,
+            smoothness: evalSmoothness,
+            weighted: evalWeightedStrategy
+        };
+
+        function updateProgressBar(current, total) {
+            let percent = (current/total * 100) || 0;
+            return `<div style="background:#eee; border-radius:4px; margin:10px 0; padding:2px;">
+                <div style="background:#776e65; width:${percent}%; height:20px; border-radius:3px; transition:width 0.3s;"></div>
+            </div>
+            <div style="text-align:center; margin-bottom:10px;"><b>${current || 0}/${total || 0}</b> games completed</div>`;
+        }
+
+        function getAnalysisParamSummary(heur, twophase) {
+            return `<div style="background:#f0f0f0; padding:12px; border-radius:6px; margin:10px 0; border-left:4px solid #776e65">
+                <div style="font-size:1.1em; margin-bottom:8px;"><b>Analysis Parameters</b></div>
+                <div><b>Strategy:</b> ${heur}</div>
+                <div><b>Two-Phase Mode:</b> ${twophase ? "Enabled" : "Disabled"}</div>
+            </div>`;
+        }
+
+        let analysisInProgress = false;
+
+        function updateAnalysisUI(board, stats, current, total, heur, twophase) {
+            // This function is for future use - currently analysis updates are handled in runAnalysis
+            return;
+        }
+
+        async function runBatchAnalysis() {
+            // This is a placeholder for batch analysis - currently handled by runAnalysis
+            return;
+        }
+
+        function showResults(stats, totalGames) {
+            // Results are shown in the analysis div by runAnalysis function
+            return;
+        }
+
+        function newAnalysis() {
+            // Reset UI for new analysis
+            document.getElementById('right-pane').innerHTML = '<div style="text-align:center; padding:20px;">Configure parameters and click "Run Analysis" to begin.</div>';
+        }
+
+        // --- Move selection functions ---
+        function moveBoard(direction) {
+            // Calls the move function with the given direction and returns whether a move was made
+            return move(direction);
+        }
+
+        // Add missing functions
+        function resetGame() {
+            emptyBoard();
+            drawBoard();
+            if (interval) {
+                clearInterval(interval);
+                interval = null;
+            }
+        }
+
+        function pickHeuristicMove(heuristic) {
+            let moves = ['up', 'down', 'left', 'right'];
+            let bestMove = null;
+            let bestScore = -Infinity;
+            
+            for (let move of moves) {
+                // Simulate the move
+                let testBoard = board.map(row => row.slice());
+                let oldBoard = JSON.stringify(testBoard);
+                
+                // Apply move logic
+                if (move === 'left' || move === 'right') {
+                    for (let n = 0; n < 4; n++) {
+                        let arr = testBoard[n].slice();
+                        if (move === 'right') arr = arr.reverse();
+                        let filtered = arr.filter(x => x);
+                        for (let i = 0; i < filtered.length - 1; i++) {
+                            if (filtered[i] === filtered[i + 1]) {
+                                filtered[i] *= 2;
+                                filtered[i + 1] = 0;
+                            }
+                        }
+                        filtered = filtered.filter(x => x);
+                        while (filtered.length < 4) filtered.push(0);
+                        if (move === 'right') filtered = filtered.reverse();
+                        testBoard[n] = filtered;
+                    }
+                } else {
+                    let t = [0, 1, 2, 3].map(i => [testBoard[0][i], testBoard[1][i], testBoard[2][i], testBoard[3][i]]);
+                    for (let n = 0; n < 4; n++) {
+                        let arr = t[n].slice();
+                        if (move === 'down') arr = arr.reverse();
+                        let filtered = arr.filter(x => x);
+                        for (let i = 0; i < filtered.length - 1; i++) {
+                            if (filtered[i] === filtered[i + 1]) {
+                                filtered[i] *= 2;
+                                filtered[i + 1] = 0;
+                            }
+                        }
+                        filtered = filtered.filter(x => x);
+                        while (filtered.length < 4) filtered.push(0);
+                        if (move === 'down') filtered = filtered.reverse();
+                        t[n] = filtered;
+                    }
+                    for (let i = 0; i < 4; i++) {
+                        for (let j = 0; j < 4; j++) {
+                            testBoard[i][j] = t[j][i];
+                        }
+                    }
+                }
+                
+                // Check if move is valid
+                if (JSON.stringify(testBoard) !== oldBoard) {
+                    let evalFunc = heurMap[heuristic];
+                    let moveScore = evalFunc ? evalFunc(testBoard) : 0;
+                    if (moveScore > bestScore) {
+                        bestScore = moveScore;
+                        bestMove = move;
+                    }
+                }
+            }
+            
+            return bestMove;
+        }
+
+        function pickTwoPhaseMove(heuristic) {
+            // First try monotonicity, then fall back to the selected heuristic
+            let move = pickHeuristicMove('monotonicity');
+            if (!move) {
+                move = pickHeuristicMove(heuristic);
+            }
+            return move;
+        }
+
+        function drawDistChart(dist) {
+            const canvas = document.getElementById('distChart');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const keys = Object.keys(dist).sort((a, b) => Number(a) - Number(b));
+            const maxVal = Math.max(...Object.values(dist));
+            const barWidth = canvas.width / keys.length;
+            
+            ctx.fillStyle = '#776e65';
+            keys.forEach((key, i) => {
+                const height = (dist[key] / maxVal) * (canvas.height - 20);
+                ctx.fillRect(i * barWidth, canvas.height - height, barWidth - 2, height);
+                
+                // Label
+                ctx.fillStyle = '#333';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(key, i * barWidth + barWidth/2, canvas.height - 5);
+                ctx.fillStyle = '#776e65';
+            });
+        }
+
+        // Fix the updateStats function to handle string parameter
+        function updateStats(content) {
+            if (typeof content === 'string') {
+                document.getElementById('stats-content').innerHTML = content;
+            }
+        }
+
+        // Add missing event listeners for reset and export
+        document.getElementById('btn-reset').addEventListener('click', resetGame);
+        
+        // Add event listeners for export dropdown (these need to be attached after DOM loads)
+        const exportButtons = document.querySelectorAll('.dropdown-item');
+        exportButtons.forEach(button => {
+            if (button.textContent.includes('CSV')) {
+                button.addEventListener('click', () => exportResults('csv'));
+            } else if (button.textContent.includes('HTML')) {
+                button.addEventListener('click', () => exportResults('html'));
+            }
+        });
+
+        // Remove old onclick attributes and use proper event listeners
+        document.getElementById('heuristicSelect').removeAttribute('onchange');
+        document.getElementById('twophase').removeAttribute('onchange');
+        
+        // Fix exportResults to work with different formats
+        function exportResults(format) {
+            if (!window._lastResults) {
+                showToast('No analysis results to export');
+                return;
+            }
+            
+            const results = window._lastResults;
+            let content, filename, mimeType;
+            
+            if (format === 'csv') {
+                // Create CSV content
+                content = 'Run,Max Tile,Score,Moves\n';
+                results.allStats.forEach((stat, i) => {
+                    content += `${i+1},${stat.maxTile},${stat.score},${stat.moves}\n`;
+                });
+                filename = 'analysis_results.csv';
+                mimeType = 'text/csv';
+            } else {
+                // Create HTML content
+                content = `
+                <html>
+                <head><title>2048 Analysis Results</title></head>
+                <body>
+                    <h1>2048 Analysis Results</h1>
+                    <h2>Summary</h2>
+                    <p>Strategy: ${results.heur}</p>
+                    <p>Two-Phase: ${results.twophase ? 'Yes' : 'No'}</p>
+                    <p>Total Runs: ${results.runs}</p>
+                    <p>Win Rate: ${results.winRate}%</p>
+                    <p>Average Max Tile: ${results.avg.toFixed(2)}</p>
+                </body>
+                </html>`;
+                filename = 'analysis_results.html';
+                mimeType = 'text/html';
+            }
+            
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showToast(`${format.toUpperCase()} exported successfully!`);
         }
     </script>
 </body>
