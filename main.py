@@ -1,12 +1,36 @@
 # main.py: Entry point for 2048 CLI and simulation modes
 # All imports are now local to avoid circular dependencies and unnecessary imports
 
-def interactive_play(seq_input=None):
+def interactive_play(seq_input=None, heuristic=None):
     from game_2048 import Game2048
+    import time as _time
+    from heuristics import heuristic_move_corner, heuristic_move_center, heuristic_move_expectimax, heuristic_move_opportunistic, heuristic_move_monotonicity
     print("\n=== 2048 Interactive Mode ===")
     valid_keys = {'w', 'a', 's', 'd'}
     game = Game2048()
     game.print_board()
+    if heuristic is not None:
+        heuristic_map = {
+            'corner': heuristic_move_corner,
+            'center': heuristic_move_center,
+            'expectimax': heuristic_move_expectimax,
+            'opportunistic': heuristic_move_opportunistic,
+            'monotonicity': heuristic_move_monotonicity
+        }
+        move_func = heuristic_map.get(heuristic)
+        if move_func is None:
+            print(f"Unknown heuristic: {heuristic}")
+            return
+        while not game.is_game_over() and not game.has_won():
+            move = move_func(game)
+            game.move_tiles(move)
+            game.print_board()
+            _time.sleep(2)
+        if game.has_won():
+            print("Congratulations! You've reached 2048!")
+        else:
+            print("Game Over!")
+        return
     if seq_input:
         seq = [m for m in seq_input if m in valid_keys]
         idx = 0
@@ -78,9 +102,17 @@ def main():
     print("  [e] Emulate/play the game")
     mode = input("Choose mode ([h]euristic, [s]imulate, [e]mulate): ").strip().lower()
     if mode == 'e':
-        print("Emulation mode: play 2048 interactively or with a move sequence.")
-        seq_input = input("Enter move sequence (WASD, blank for manual play): ").strip().lower()
-        interactive_play(seq_input if seq_input else None)
+        print("Emulation mode: play 2048 interactively, with a move sequence, or with a heuristic.")
+        emu_opt = input("Choose emulation type: [m]anual, [s]equence, or [h]euristic: ").strip().lower()
+        if emu_opt == 'h':
+            print("Heuristic options: corner, center, expectimax, opportunistic, monotonicity")
+            heuristic = input("Heuristic: ").strip().lower()
+            interactive_play(seq_input=None, heuristic=heuristic)
+        elif emu_opt == 's':
+            seq_input = input("Enter move sequence (WASD): ").strip().lower()
+            interactive_play(seq_input=seq_input)
+        else:
+            interactive_play()
         return
     if mode == 'h':
         print("Heuristic mode: choose from 'corner', 'center', 'expectimax', 'opportunistic', or 'monotonicity'.")

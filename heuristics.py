@@ -57,40 +57,81 @@ def heuristic_move_opportunistic(game):
     return heuristic_move_corner(game)
 
 def heuristic_move_monotonicity(game):
+    def evaluate(board):
+        # Weights from ovolve/2048-AI
+        smooth_weight = 0.1
+        mono_weight = 1.0
+        empty_weight = 2.7
+        max_weight = 1.0
+
+        def smoothness(b):
+            smooth = 0
+            for i in range(4):
+                for j in range(4):
+                    if b[i, j]:
+                        v = np.log2(b[i, j])
+                        for d in [(1, 0), (0, 1)]:
+                            ni, nj = i + d[0], j + d[1]
+                            if 0 <= ni < 4 and 0 <= nj < 4 and b[ni, nj]:
+                                target = np.log2(b[ni, nj])
+                                smooth -= abs(v - target)
+            return smooth
+
+        def monotonicity(b):
+            totals = [0, 0, 0, 0]
+            for i in range(4):
+                current = 0
+                next = current + 1
+                while next < 4:
+                    while next < 4 and b[i, next] == 0:
+                        next += 1
+                    if next >= 4:
+                        next -= 1
+                    current_value = np.log2(b[i, current]) if b[i, current] else 0
+                    next_value = np.log2(b[i, next]) if b[i, next] else 0
+                    if current_value > next_value:
+                        totals[0] += next_value - current_value
+                    elif next_value > current_value:
+                        totals[1] += current_value - next_value
+                    current = next
+                    next += 1
+            for j in range(4):
+                current = 0
+                next = current + 1
+                while next < 4:
+                    while next < 4 and b[next, j] == 0:
+                        next += 1
+                    if next >= 4:
+                        next -= 1
+                    current_value = np.log2(b[current, j]) if b[current, j] else 0
+                    next_value = np.log2(b[next, j]) if b[next, j] else 0
+                    if current_value > next_value:
+                        totals[2] += next_value - current_value
+                    elif next_value > current_value:
+                        totals[3] += current_value - next_value
+                    current = next
+                    next += 1
+            return max(totals[0], totals[1]) + max(totals[2], totals[3])
+
+        def max_in_corner(b):
+            max_tile = np.max(b)
+            return 1 if max_tile in [b[0,0], b[0,3], b[3,0], b[3,3]] else 0
+
+        b = board
+        return (
+            smooth_weight * smoothness(b) +
+            mono_weight * monotonicity(b) +
+            empty_weight * np.log2(np.count_nonzero(b == 0) + 1) +
+            max_weight * max_in_corner(b)
+        )
+
     best_move = None
     best_score = -float('inf')
     for move in MOVES:
         temp = game.copy()
         if not temp.move_tiles(move):
             continue
-        board = temp.board
-        max_tile = np.max(board)
-        # Monotonicity (favor left and up)
-        mono_left = sum(monotonicity_score(row) for row in board)
-        mono_up = sum(monotonicity_score(col) for col in board.T)
-        mono = 4 * (mono_left + mono_up)
-        # Smoothness (penalize big differences)
-        smoothness = -np.sum(np.abs(np.diff(board, axis=0))) - np.sum(np.abs(np.diff(board, axis=1)))
-        # Grouping
-        grouping = grouping_score(board)
-        # Corner bonus/penalty
-        in_corner = max_tile in [board[0,0], board[0,-1], board[-1,0], board[-1,-1]]
-        corner_bonus = 40 if in_corner else -40
-        # Empty tile bonus
-        empty_bonus = 0.2 * np.count_nonzero(board == 0)
-        # Adjacency of max and second max
-        second_max = np.partition(board.flatten(), -2)[-2]
-        adj_penalty = -20
-        for i in range(board.shape[0]):
-            for j in range(board.shape[1]):
-                if board[i, j] == max_tile:
-                    for di, dj in [(-1,0),(1,0),(0,-1),(0,1)]:
-                        ni, nj = i+di, j+dj
-                        if 0 <= ni < board.shape[0] and 0 <= nj < board.shape[1]:
-                            if board[ni, nj] == second_max:
-                                adj_penalty = 0
-        # Total score
-        score = mono + smoothness + grouping + corner_bonus + empty_bonus + adj_penalty
+        score = evaluate(temp.board)
         if score > best_score:
             best_score = score
             best_move = move
