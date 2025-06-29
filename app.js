@@ -518,12 +518,19 @@ class App2048 {
         if (stopBtn) stopBtn.disabled = false;
         
         try {
+            let results;
             if (analysisMode === 'compare') {
-                await this.runMultipleStrategyAnalysis();
+                results = await this.runMultipleStrategyAnalysis();
             } else if (analysisMode === 'twophase') {
-                await this.runTwoPhaseAnalysis();
+                results = await this.runTwoPhaseAnalysis();
             } else {
-                await this.runSingleStrategyAnalysis();
+                results = await this.runSingleStrategyAnalysis();
+            }
+            
+            // Update statistics and show stats tab
+            if (results) {
+                this.updateStatisticsForMode(analysisMode, results);
+                this.ui.showTab('stats');
             }
         } finally {
             // Reset button states
@@ -664,6 +671,240 @@ class App2048 {
     getCurrentAnalysisMode() {
         const activeTab = document.querySelector('.analysis-tab.active');
         return activeTab?.getAttribute('data-mode') || 'single';
+    }
+
+    updateStatisticsForMode(analysisMode, results) {
+        let statsContent = '';
+        
+        switch (analysisMode) {
+            case 'compare':
+                statsContent = this.formatComparisonStatistics(results);
+                break;
+            case 'twophase':
+                statsContent = this.formatTwoPhaseStatistics(results);
+                break;
+            default: // single strategy
+                statsContent = this.formatSingleStrategyStatistics(results);
+                break;
+        }
+        
+        this.ui.updateStats(statsContent);
+    }
+
+    formatSingleStrategyStatistics(results) {
+        if (!results || !results.games) return '<p>No results available</p>';
+        
+        const games = results.games;
+        const totalGames = games.length;
+        const scores = games.map(g => g.score);
+        const maxTiles = games.map(g => g.maxTile);
+        const moves = games.map(g => g.moves);
+        
+        const avgScore = Math.round(scores.reduce((a, b) => a + b, 0) / totalGames);
+        const maxScore = Math.max(...scores);
+        const minScore = Math.min(...scores);
+        const avgMoves = Math.round(moves.reduce((a, b) => a + b, 0) / totalGames);
+        const maxTileCount = {};
+        
+        maxTiles.forEach(tile => {
+            maxTileCount[tile] = (maxTileCount[tile] || 0) + 1;
+        });
+        
+        const reached2048 = maxTiles.filter(tile => tile >= 2048).length;
+        const winRate = ((reached2048 / totalGames) * 100).toFixed(1);
+        
+        return `
+            <div class="statistics-content">
+                <h4>📊 Single Strategy Analysis Results</h4>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h5>🎯 Performance Overview</h5>
+                        <ul>
+                            <li><strong>Strategy:</strong> ${results.strategy || 'Unknown'}</li>
+                            <li><strong>Games Played:</strong> ${totalGames}</li>
+                            <li><strong>Win Rate (2048+):</strong> ${winRate}%</li>
+                            <li><strong>Success Rate:</strong> ${reached2048}/${totalGames} games</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <h5>📈 Score Statistics</h5>
+                        <ul>
+                            <li><strong>Average Score:</strong> ${avgScore.toLocaleString()}</li>
+                            <li><strong>Highest Score:</strong> ${maxScore.toLocaleString()}</li>
+                            <li><strong>Lowest Score:</strong> ${minScore.toLocaleString()}</li>
+                            <li><strong>Score Range:</strong> ${(maxScore - minScore).toLocaleString()}</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <h5>🎮 Game Metrics</h5>
+                        <ul>
+                            <li><strong>Average Moves:</strong> ${avgMoves}</li>
+                            <li><strong>Most Common Max Tile:</strong> ${Object.entries(maxTileCount).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A'}</li>
+                            <li><strong>Efficiency:</strong> ${(avgScore / avgMoves).toFixed(1)} pts/move</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <h5>🏆 Tile Achievements</h5>
+                        <ul>
+                            ${Object.entries(maxTileCount)
+                                .sort((a, b) => parseInt(b[0]) - parseInt(a[0]))
+                                .map(([tile, count]) => `<li><strong>${tile}:</strong> ${count} games (${((count/totalGames)*100).toFixed(1)}%)</li>`)
+                                .join('')}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    formatComparisonStatistics(results) {
+        if (!results || results.length === 0) return '<p>No comparison results available</p>';
+        
+        const sortedResults = [...results].sort((a, b) => b.avgScore - a.avgScore);
+        
+        return `
+            <div class="statistics-content">
+                <h4>⚔️ Strategy Comparison Results</h4>
+                <div class="comparison-stats">
+                    <div class="stat-card">
+                        <h5>🏆 Strategy Rankings</h5>
+                        <ol class="strategy-ranking">
+                            ${sortedResults.map((result, index) => {
+                                const winRate = ((result.gamesReached2048 / result.totalGames) * 100).toFixed(1);
+                                const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🔹';
+                                return `
+                                    <li>
+                                        <strong>${medal} ${result.strategy}</strong>
+                                        <div class="strategy-details">
+                                            <span>Avg Score: ${Math.round(result.avgScore).toLocaleString()}</span>
+                                            <span>Win Rate: ${winRate}%</span>
+                                            <span>Games: ${result.totalGames}</span>
+                                        </div>
+                                    </li>
+                                `;
+                            }).join('')}
+                        </ol>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <h5>📊 Detailed Comparison</h5>
+                        <div class="comparison-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Strategy</th>
+                                        <th>Avg Score</th>
+                                        <th>Max Score</th>
+                                        <th>Win Rate</th>
+                                        <th>Avg Moves</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${sortedResults.map(result => {
+                                        const winRate = ((result.gamesReached2048 / result.totalGames) * 100).toFixed(1);
+                                        return `
+                                            <tr>
+                                                <td><strong>${result.strategy}</strong></td>
+                                                <td>${Math.round(result.avgScore).toLocaleString()}</td>
+                                                <td>${result.maxScore.toLocaleString()}</td>
+                                                <td>${winRate}%</td>
+                                                <td>${Math.round(result.avgMoves)}</td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <h5>🎯 Performance Insights</h5>
+                        <ul>
+                            <li><strong>Best Overall:</strong> ${sortedResults[0]?.strategy} (${Math.round(sortedResults[0]?.avgScore).toLocaleString()} avg score)</li>
+                            <li><strong>Highest Single Game:</strong> ${Math.max(...results.map(r => r.maxScore)).toLocaleString()}</li>
+                            <li><strong>Most Consistent:</strong> ${results.reduce((prev, curr) => 
+                                (curr.maxScore - curr.minScore) < (prev.maxScore - prev.minScore) ? curr : prev
+                            ).strategy}</li>
+                            <li><strong>Most Efficient:</strong> ${results.reduce((prev, curr) => 
+                                (curr.avgScore / curr.avgMoves) > (prev.avgScore / prev.avgMoves) ? curr : prev
+                            ).strategy} (${((results.reduce((prev, curr) => 
+                                (curr.avgScore / curr.avgMoves) > (prev.avgScore / prev.avgMoves) ? curr : prev
+                            ).avgScore / results.reduce((prev, curr) => 
+                                (curr.avgScore / curr.avgMoves) > (prev.avgScore / prev.avgMoves) ? curr : prev
+                            ).avgMoves)).toFixed(1)} pts/move)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    formatTwoPhaseStatistics(results) {
+        if (!results || !results.games) return '<p>No two-phase results available</p>';
+        
+        const games = results.games;
+        const totalGames = games.length;
+        const scores = games.map(g => g.score);
+        const maxTiles = games.map(g => g.maxTile);
+        const moves = games.map(g => g.moves);
+        
+        const avgScore = Math.round(scores.reduce((a, b) => a + b, 0) / totalGames);
+        const maxScore = Math.max(...scores);
+        const reached2048 = maxTiles.filter(tile => tile >= 2048).length;
+        const winRate = ((reached2048 / totalGames) * 100).toFixed(1);
+        
+        return `
+            <div class="statistics-content">
+                <h4>🔄 Two-Phase Strategy Analysis</h4>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h5>⚙️ Strategy Configuration</h5>
+                        <ul>
+                            <li><strong>Primary Strategy:</strong> Monotonicity</li>
+                            <li><strong>Secondary Strategy:</strong> ${results.secondaryStrategy || 'Unknown'}</li>
+                            <li><strong>Games Played:</strong> ${totalGames}</li>
+                            <li><strong>Strategy Type:</strong> Two-Phase Adaptive</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <h5>📈 Performance Results</h5>
+                        <ul>
+                            <li><strong>Average Score:</strong> ${avgScore.toLocaleString()}</li>
+                            <li><strong>Highest Score:</strong> ${maxScore.toLocaleString()}</li>
+                            <li><strong>Win Rate (2048+):</strong> ${winRate}%</li>
+                            <li><strong>Success Rate:</strong> ${reached2048}/${totalGames} games</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <h5>🎯 Two-Phase Benefits</h5>
+                        <ul>
+                            <li><strong>Adaptive Strategy:</strong> Switches between strategies based on game state</li>
+                            <li><strong>Early Game:</strong> Focuses on monotonic tile organization</li>
+                            <li><strong>Mid/Late Game:</strong> Applies secondary strategy for optimization</li>
+                            <li><strong>Efficiency:</strong> ${(avgScore / (moves.reduce((a, b) => a + b, 0) / totalGames)).toFixed(1)} pts/move</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <h5>📊 Game Distribution</h5>
+                        <ul>
+                            ${Object.entries(maxTiles.reduce((acc, tile) => {
+                                acc[tile] = (acc[tile] || 0) + 1;
+                                return acc;
+                            }, {}))
+                            .sort((a, b) => parseInt(b[0]) - parseInt(a[0]))
+                            .map(([tile, count]) => `<li><strong>${tile} Tile:</strong> ${count} games (${((count/totalGames)*100).toFixed(1)}%)</li>`)
+                            .join('')}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 }
 
