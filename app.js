@@ -16,7 +16,7 @@ class App2048 {
         this.setupEventListeners();
         this.ui.drawBoard(this.game);
         this.ui.showTab('desc');
-        this.ui.updateDescription(this.mode);
+        this.ui.updateDescription();
         this.ui.updateLayoutForDevice();
     }
 
@@ -121,7 +121,7 @@ class App2048 {
                 break;
         }
         
-        this.ui.updateDescription(this.mode);
+        this.ui.updateDescription();
         this.ui.drawBoard(this.game);
         
         if (this.mode !== 'analysis') {
@@ -481,7 +481,7 @@ class App2048 {
         
         // Set mode without auto-starting
         this.mode = 'heuristic';
-        this.ui.updateDescription(this.mode);
+        this.ui.updateDescription();
         
         // Start emulation with the correct parameters
         this.startHeuristicEmulation(speed * 1000); // Convert to milliseconds

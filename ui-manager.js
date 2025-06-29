@@ -356,6 +356,40 @@ class UIManager {
         this.setButtonState('btn-reset', !isRunning);
     }
 
+    setControlsDisabled(disabled) {
+        // Disable/enable main control buttons during analysis
+        this.setButtonState('btn-play', !disabled);
+        this.setButtonState('btn-heuristic', !disabled);
+        this.setButtonState('btn-analysis', !disabled);
+        this.setButtonState('btn-reset', !disabled);
+        this.setButtonState('btn-csv', !disabled);
+        this.setButtonState('btn-html', !disabled);
+        
+        // Also disable analysis controls
+        this.setButtonState('btn-start-single', !disabled);
+        this.setButtonState('btn-start-comparison', !disabled);
+        this.setButtonState('btn-start-optimization', !disabled);
+        
+        // Disable form elements
+        const formElements = [
+            'heuristicSelect',
+            'numGames',
+            'analysisMode',
+            'optimizationTarget'
+        ];
+        
+        formElements.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) element.disabled = disabled;
+        });
+        
+        // Disable strategy checkboxes
+        const checkboxes = document.querySelectorAll('.strategy-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.disabled = disabled;
+        });
+    }
+
     // Log messages
     log(message, type = 'info') {
         if (this.elements.log) {
@@ -378,123 +412,6 @@ class UIManager {
         if (this.elements.log) {
             this.elements.log.innerHTML = '';
         }
-    }
-
-    // Utility methods
-    formatScore(score) {
-        return score.toLocaleString();
-    }
-
-    formatTime(seconds) {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
-    }
-
-    // Game state indicators
-    showGameOver(finalScore, maxTile) {
-        const message = `Game Over! Final Score: ${this.formatScore(finalScore)}, Max Tile: ${maxTile}`;
-        this.log(message, 'info');
-    }
-
-    showWin(score) {
-        const message = `🎉 You reached 2048! Score: ${this.formatScore(score)}`;
-        this.log(message, 'success');
-    }
-
-    // Error handling
-    showError(message) {
-        this.log(`Error: ${message}`, 'error');
-        console.error('UI Error:', message);
-    }
-
-    // Status updates
-    showStatus(message, type = 'info') {
-        this.log(message, type);
-    }
-
-    // Analysis-specific UI updates
-    showAnalysisProgress(current, total, strategy = '') {
-        const percent = Math.round((current / total) * 100);
-        const message = strategy ? 
-            `Testing ${strategy}: ${current}/${total} games (${percent}%)` :
-            `Progress: ${current}/${total} (${percent}%)`;
-        
-        const progressHtml = `
-            <div class="analysis-progress mb-3">
-                <div class="d-flex justify-content-between mb-1">
-                    <span>${message}</span>
-                    <span>${percent}%</span>
-                </div>
-                ${this.createProgressBar(percent)}
-            </div>
-        `;
-        
-        // Update or create progress display
-        let progressElement = document.getElementById('analysis-progress');
-        if (!progressElement) {
-            progressElement = document.createElement('div');
-            progressElement.id = 'analysis-progress';
-            if (this.elements.analysis) {
-                this.elements.analysis.insertBefore(progressElement, this.elements.analysis.firstChild);
-            }
-        }
-        progressElement.innerHTML = progressHtml;
-    }
-
-    hideAnalysisProgress() {
-        const progressElement = document.getElementById('analysis-progress');
-        if (progressElement) {
-            progressElement.remove();
-        }
-    }
-
-    // Export functionality
-    downloadCSV(data, filename) {
-        const blob = new Blob([data], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-    }
-
-    downloadHTML(data, filename) {
-        const blob = new Blob([data], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-    }
-
-    // Settings management
-    getAnalysisSettings() {
-        return {
-            numGames: parseInt(document.getElementById('numGames')?.value) || 10,
-            analysisMode: document.querySelector('input[name="analysisMode"]:checked')?.value || 'single',
-            selectedStrategies: Array.from(document.querySelectorAll('.strategy-checkbox:checked')).map(cb => cb.value),
-            optimizationTarget: document.getElementById('optimizationTarget')?.value || 'score'
-        };
-    }
-
-    setOptimizationButtonsState(isRunning) {
-        const startBtn = document.getElementById('btn-start-optimization');
-        const stopBtn = document.getElementById('btn-stop-optimization');
-        
-        if (startBtn) startBtn.disabled = isRunning;
-        if (stopBtn) stopBtn.disabled = !isRunning;
-    }
-
-    updateDescription(mode) {
-        // Update description based on current mode
-        this.updateDescription();
     }
 
     showNotification(message, type = 'info') {
@@ -545,7 +462,9 @@ class UIManager {
         setTimeout(() => {
             notification.style.opacity = '0';
             setTimeout(() => {
-                document.body.removeChild(notification);
+                if (notification.parentNode) {
+                    document.body.removeChild(notification);
+                }
             }, 300);
         }, 3000);
     }
