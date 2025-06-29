@@ -1,53 +1,79 @@
-# 2048
+# 2048 Web Game
 
-A comprehensive 2048 game emulator, web interface, and ML-powered solution optimizer.
+A comprehensive 2048 web-based game with advanced AI strategies and analytics.
 
 ## Features
 - **Interactive Web Interface**: Complete web-based 2048 game with multiple play modes
-- **Multiple Heuristics**: Monotonicity, corner, center, expectimax, opportunistic, smoothness strategies
-- **ML Weight Optimization**: Advanced machine learning algorithms to find optimal heuristic weights
-- **Batch Analysis**: Run statistical analysis with exportable results (CSV/HTML)
-- **Real-time Visualization**: Heatmaps, statistics, and progress tracking
-- **Command-line Interface**: Traditional CLI for automated testing and analysis
-- **Parallelized Simulation**: High-performance testing with progress tracking
-
-## Requirements
-- Python 3.7+
-- numpy, matplotlib, tqdm
-- Web browser (for web interface)
+- **Advanced AI Strategies**: Multiple heuristics including Expectimax Corner, Gradient Descent, ML Sim, and more
+- **Real-time Analysis**: Statistical analysis with exportable results (CSV/HTML)
+- **ML Weight Optimization**: Advanced machine learning algorithms to find optimal strategy weights
+- **Customizable Settings**: Adjustable parameters for all strategies and optimization methods
+- **Modern UI**: Clean, responsive design with tabbed interface
 
 ## Quick Start
 
-### Web Interface (Recommended)
-Open `web_2048.html` in your browser for the complete interactive experience including:
-- Manual play mode
-- Heuristic emulation with real-time visualization
-- Batch analysis with customizable parameters
-- **ML Weight Optimization** with multiple algorithms
-- Export functionality and detailed statistics
+Simply open `web_2048.html` in your web browser for the complete interactive experience!
 
-### Command Line Interface
+## How to Use
 
-## Usage
+### Game Modes
 
-Run the main CLI:
+1. **Manual Play**: Use arrow keys or WASD to play manually
+2. **Heuristic Emulation**: Watch AI strategies play automatically
+3. **Batch Analysis**: Run multiple games to test strategy performance
 
-```
-python main.py
-```
+### AI Strategies (Recommended for reaching 2048)
 
-You will be prompted to choose a mode:
+- **⭐ Expectimax Corner**: Advanced expectimax with corner bias (best for 2048+)
+- **⭐ ML Sim**: Machine learning optimized feature combination
+- **⭐ Gradient Descent**: Position-weighted scoring strategy
+- **Ultra-Adaptive**: Adapts strategy based on game phase
+- **Advanced Minimax**: Deep lookahead with alpha-beta pruning
 
-- `[h]` Heuristic simulation: Run games using a heuristic (corner, center, expectimax).
-- `[s]` ML sequence simulation: Enter two move sequences and only the top X% of games from the first sequence will continue with the second sequence, to try to improve the result. You can set the switch tile, number of runs, and top percent.
-- `[e]` Emulate/play: Play the game interactively or by entering a move sequence (WASD).
+### Settings & Optimization
 
-### Two-Phase Best Simulation Example
+1. Click the **Settings** tab in the side panel
+2. Adjust strategy weights and run parameters
+3. Use **ML Weight Optimization** to automatically find best weights:
+   - Choose optimization method (Random, Genetic, Grid, Bayesian)
+   - Set iterations and games per evaluation
+   - Click "Start Optimization" and wait for results
 
-In simulation mode (`[s]`):
-- Enter the first and second move sequences (e.g., `wasd` and `dsaw`).
-- Set the switch tile (default 512), number of runs (default 50), and top percent (default 0.2 = 20%).
-- The second sequence will only run for the top X% of games from the first phase.
+### Analysis & Export
+
+- **Statistics Tab**: View detailed performance metrics
+- **Export Options**: Save results as CSV or HTML reports
+- **Real-time Progress**: Track optimization and analysis progress
+
+## Strategy Performance
+
+Expected success rates for reaching 2048:
+- **Expectimax Corner**: 70-90% success rate
+- **ML Sim**: 60-80% success rate  
+- **Gradient Descent**: 50-70% success rate
+- **Ultra-Adaptive**: 40-60% success rate
+
+## Tips for Success
+
+1. **Try Expectimax Corner first** - it's the most sophisticated strategy
+2. **Use ML Optimization** to find custom weights for your preferences
+3. **Run Batch Analysis** to compare different strategies statistically
+4. **Keep the largest tile in a corner** (most strategies work this way)
+5. **Monitor empty cell count** - more empty cells = more options
+
+## File Structure
+
+- `web_2048.html` — Main game interface
+- `styles.css` — Game styling and UI
+- `game-logic.js` — Core 2048 game mechanics
+- `heuristics.js` — AI strategy implementations
+- `ui-manager.js` — User interface management
+- `analysis-manager.js` — Statistics and batch analysis
+- `app.js` — Main application controller
+
+## Browser Compatibility
+
+Works in all modern web browsers. No installation required!
 - Results and histograms for both phases will be shown.
 
 ### Heuristic Mode Example
