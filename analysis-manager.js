@@ -32,6 +32,13 @@ class AnalysisManager {
 
         const paramSummary = this.createParameterSummary(heuristicType, twoPhase, runs);
         
+        // Show initial status to user
+        const initialDisplay = paramSummary + '<p><strong>Status:</strong> <i>Initializing...</i></p>';
+        this.ui.showAnalysis(initialDisplay);
+        
+        // Small delay to ensure UI updates
+        await this.sleep(50);
+        
         for (let run = 0; run < runs; run++) {
             const runResult = await this.runSingleGame(heuristicType, twoPhase, run, runs, paramSummary);
             
@@ -66,20 +73,34 @@ class AnalysisManager {
         // Update progress
         this.updateProgressDisplay(runIndex, totalRuns, paramSummary);
         
-        while (!this.game.gameOver && moves < maxMoves) {
-            const move = this.heuristics.pickMove(this.game, heuristicType, twoPhase);
-            
-            if (move && this.game.move(move)) {
-                moves++;
+        try {
+            while (!this.game.gameOver && moves < maxMoves) {
+                // Add timeout protection
+                const moveStartTime = Date.now();
+                const move = this.heuristics.pickMove(this.game, heuristicType, twoPhase);
+                const moveTime = Date.now() - moveStartTime;
                 
-                // Periodically update the board display
-                if (moves % 10 === 0) {
-                    this.ui.drawBoard(this.game);
-                    await this.sleep(1); // Small delay for UI responsiveness
+                // If move calculation took too long, skip this strategy
+                if (moveTime > 5000) { // 5 second timeout
+                    console.warn(`Move calculation took ${moveTime}ms for ${heuristicType}, skipping game`);
+                    break;
                 }
-            } else {
-                break; // No valid moves
+                
+                if (move && this.game.move(move)) {
+                    moves++;
+                    
+                    // Periodically update the board display
+                    if (moves % 10 === 0) {
+                        this.ui.drawBoard(this.game);
+                        await this.sleep(1); // Small delay for UI responsiveness
+                    }
+                } else {
+                    break; // No valid moves
+                }
             }
+        } catch (error) {
+            console.error(`Error in game simulation for ${heuristicType}:`, error);
+            // Return basic result even if there was an error
         }
         
         const duration = Date.now() - startTime;
@@ -145,16 +166,32 @@ class AnalysisManager {
     }
 
     calculateStatistics(results) {
+        if (!results.maxTiles || results.maxTiles.length === 0) {
+            return {
+                avgMaxTile: 0,
+                avgScore: 0,
+                avgMoves: 0,
+                avgDuration: 0,
+                winRate: 0,
+                winCount: 0,
+                maxScore: 0,
+                minScore: 0,
+                maxTile: 0,
+                scoreStdDev: 0
+            };
+        }
+        
         const avgMaxTile = results.maxTiles.reduce((a, b) => a + b, 0) / results.maxTiles.length;
         const avgScore = results.scores.reduce((a, b) => a + b, 0) / results.scores.length;
         const avgMoves = results.movesCounts.reduce((a, b) => a + b, 0) / results.movesCounts.length;
+        const avgDuration = results.durations.reduce((a, b) => a + b, 0) / results.durations.length;
         
         const winCount = results.maxTiles.filter(tile => tile >= 2048).length;
         const winRate = (winCount / results.runs) * 100;
         
         const maxScore = Math.max(...results.scores);
         const minScore = Math.min(...results.scores);
-        const maxMaxTile = Math.max(...results.maxTiles);
+        const maxTile = Math.max(...results.maxTiles);
         
         // Calculate standard deviations
         const scoreVariance = results.scores.reduce((sum, score) => {
@@ -166,11 +203,12 @@ class AnalysisManager {
             avgMaxTile,
             avgScore,
             avgMoves,
+            avgDuration,
             winRate,
             winCount,
             maxScore,
             minScore,
-            maxMaxTile,
+            maxTile,
             scoreStdDev
         };
     }
@@ -284,6 +322,324 @@ class AnalysisManager {
         
         const filename = `2048_analysis_${results.heuristic}_${results.twoPhase ? 'twophase_' : ''}${timestamp}.html`;
         this.ui.triggerDownload(html, filename, 'text/html');
+    }
+
+    async runComparisonAnalysis(strategies, twoPhase = false, runs = this.defaultRuns) {
+        if (this.isRunning) {
+            this.ui.showNotification('Analysis already running!', 'warning');
+            return;
+        }
+
+        this.isRunning = true;
+        this.ui.setControlsDisabled(true);
+
+        const comparisonResults = {
+            strategies: strategies,
+            twoPhase: twoPhase,
+            runs: runs,
+            results: {},
+            startTime: Date.now()
+        };
+
+        // Show initial status to user
+        const initialSummary = `<h4>Strategy Comparison Analysis</h4>
+            <p><strong>Strategies to test:</strong> ${strategies.join(', ')}</p>
+            <p><strong>Games per strategy:</strong> ${runs}${twoPhase ? ' | <strong>Two-Phase Mode</strong>' : ''}</p>
+            <p><strong>Status:</strong> <i>Initializing...</i></p>`;
+        this.ui.showAnalysis(initialSummary);
+        
+        // Small delay to ensure UI updates
+        await this.sleep(50);
+
+        for (let strategyIndex = 0; strategyIndex < strategies.length; strategyIndex++) {
+            const strategy = strategies[strategyIndex];
+            
+            if (!this.isRunning) break; // Check if stopped
+            
+            const results = {
+                heuristic: strategy,
+                twoPhase: twoPhase,
+                runs: runs,
+                maxTiles: [],
+                scores: [],
+                movesCounts: [],
+                durations: [],
+                distribution: {}
+            };
+
+            for (let run = 0; run < runs; run++) {
+                if (!this.isRunning) break; // Check if stopped
+                
+                try {
+                    const paramSummary = `<h4>Strategy Comparison Analysis</h4>
+                        <p><strong>Current:</strong> ${strategy} (${strategyIndex + 1}/${strategies.length})</p>
+                        <p><strong>All Strategies:</strong> ${strategies.join(', ')}</p>
+                        <p><strong>Games per strategy:</strong> ${runs}${twoPhase ? ' | <strong>Two-Phase Mode</strong>' : ''}</p>`;
+                    
+                    const runResult = await this.runSingleGame(strategy, twoPhase, run, runs, paramSummary);
+                    
+                    results.maxTiles.push(runResult.maxTile);
+                    results.scores.push(runResult.score);
+                    results.movesCounts.push(runResult.moves);
+                    results.durations.push(runResult.duration);
+                    
+                    // Update distribution
+                    const maxTile = runResult.maxTile;
+                    results.distribution[maxTile] = (results.distribution[maxTile] || 0) + 1;
+                } catch (error) {
+                    console.error(`Error in comparison analysis run ${run} for strategy ${strategy}:`, error);
+                    // Skip this run and continue
+                    continue;
+                }
+            }
+
+            comparisonResults.results[strategy] = results;
+        }
+
+        comparisonResults.totalTime = Date.now() - comparisonResults.startTime;
+        this.currentAnalysis = comparisonResults;
+        
+        this.isRunning = false;
+        this.ui.setControlsDisabled(false);
+        
+        this.displayComparisonResults(comparisonResults);
+        return comparisonResults;
+    }
+
+    displayComparisonResults(results) {
+        let output = '<div class="comparison-results">';
+        output += `<h3>Strategy Comparison Results</h3>`;
+        output += `<p><strong>Games per strategy:</strong> ${results.runs} | <strong>Total time:</strong> ${(results.totalTime / 1000).toFixed(1)}s</p>`;
+        
+        // Create summary table
+        output += '<table class="comparison-table">';
+        output += '<tr><th>Strategy</th><th>2048+ Rate</th><th>Avg Score</th><th>Avg Moves</th><th>Max Tile</th></tr>';
+        
+        const summaries = [];
+        
+        Object.entries(results.results).forEach(([strategy, data]) => {
+            const summary = this.calculateStatistics(data);
+            summaries.push({ strategy, ...summary });
+            
+            const winRate = ((data.maxTiles.filter(tile => tile >= 2048).length / data.maxTiles.length) * 100).toFixed(1);
+            const maxTileAchieved = Math.max(...data.maxTiles);
+            
+            output += `<tr>
+                <td><strong>${strategy}</strong></td>
+                <td>${winRate}%</td>
+                <td>${summary.avgScore.toFixed(0)}</td>
+                <td>${summary.avgMoves.toFixed(0)}</td>
+                <td>${maxTileAchieved}</td>
+            </tr>`;
+        });
+        
+        output += '</table>';
+        
+        // Find best performing strategy
+        const bestStrategy = summaries.reduce((best, current) => {
+            const currentWinRate = (results.results[current.strategy].maxTiles.filter(tile => tile >= 2048).length / results.results[current.strategy].maxTiles.length);
+            const bestWinRate = (results.results[best.strategy].maxTiles.filter(tile => tile >= 2048).length / results.results[best.strategy].maxTiles.length);
+            return currentWinRate > bestWinRate ? current : best;
+        });
+        
+        output += `<div class="best-strategy">
+            <h4>🏆 Best Performing Strategy: ${bestStrategy.strategy}</h4>
+            <p>Recommended for reaching 2048 consistently.</p>
+        </div>`;
+        
+        output += '</div>';
+        
+        this.ui.updateStats(output);
+        this.ui.showNotification(`Comparison complete! Best strategy: ${bestStrategy.strategy}`, 'success');
+    }
+
+    async runTwoPhaseAnalysis(earlyStrategy, lateStrategy, threshold, runs = this.defaultRuns) {
+        if (this.isRunning) {
+            this.ui.showNotification('Analysis already running!', 'warning');
+            return;
+        }
+
+        this.isRunning = true;
+        this.ui.setControlsDisabled(true);
+
+        const results = {
+            type: 'twophase',
+            earlyStrategy: earlyStrategy,
+            lateStrategy: lateStrategy,
+            threshold: threshold,
+            runs: runs,
+            maxTiles: [],
+            scores: [],
+            movesCounts: [],
+            durations: [],
+            switchPoints: [], // Track when strategy switched
+            distribution: {},
+            startTime: Date.now()
+        };
+
+        const paramSummary = this.createTwoPhaseParameterSummary(earlyStrategy, lateStrategy, threshold, runs);
+        
+        // Show initial status to user
+        const initialDisplay = paramSummary + '<p><strong>Status:</strong> <i>Initializing...</i></p>';
+        this.ui.showAnalysis(initialDisplay);
+        
+        // Small delay to ensure UI updates
+        await this.sleep(50);
+        
+        for (let run = 0; run < runs; run++) {
+            const runResult = await this.runTwoPhaseSingleGame(earlyStrategy, lateStrategy, threshold, run, runs, paramSummary);
+            
+            results.maxTiles.push(runResult.maxTile);
+            results.scores.push(runResult.score);
+            results.movesCounts.push(runResult.moves);
+            results.durations.push(runResult.duration);
+            results.switchPoints.push(runResult.switchPoint);
+            
+            // Update distribution
+            const maxTile = runResult.maxTile;
+            results.distribution[maxTile] = (results.distribution[maxTile] || 0) + 1;
+        }
+
+        results.totalTime = Date.now() - results.startTime;
+        this.currentAnalysis = results;
+        
+        this.displayTwoPhaseResults(results);
+        
+        this.isRunning = false;
+        this.ui.setControlsDisabled(false);
+        
+        return results;
+    }
+
+    async runTwoPhaseSingleGame(earlyStrategy, lateStrategy, threshold, runIndex, totalRuns, paramSummary) {
+        const startTime = Date.now();
+        this.game.initBoard();
+        this.ui.drawBoard(this.game);
+        
+        let moves = 0;
+        let switchPoint = -1;
+        let currentStrategy = earlyStrategy;
+        const maxMoves = 1000;
+        
+        // Update progress
+        this.updateProgressDisplay(runIndex, totalRuns, paramSummary);
+        
+        while (!this.game.gameOver && moves < maxMoves) {
+            // Check if we should switch strategies
+            const maxTile = this.game.getMaxTile();
+            if (switchPoint === -1 && maxTile >= threshold) {
+                currentStrategy = lateStrategy;
+                switchPoint = moves;
+            }
+            
+            const move = this.heuristics.pickMove(this.game, currentStrategy, false);
+            
+            if (move && this.game.move(move)) {
+                moves++;
+                
+                // Periodically update the board display
+                if (moves % 10 === 0) {
+                    this.ui.drawBoard(this.game);
+                    await this.sleep(1); // Small delay for UI responsiveness
+                }
+            } else {
+                break; // No valid moves
+            }
+        }
+        
+        const duration = Date.now() - startTime;
+        
+        return {
+            maxTile: this.game.getMaxTile(),
+            score: this.game.score,
+            moves: moves,
+            duration: duration,
+            switchPoint: switchPoint,
+            gameOver: this.game.gameOver
+        };
+    }
+
+    createTwoPhaseParameterSummary(earlyStrategy, lateStrategy, threshold, runs) {
+        return `<h4>Two-Phase Analysis</h4>
+            <p><strong>Early Strategy:</strong> ${earlyStrategy}</p>
+            <p><strong>Late Strategy:</strong> ${lateStrategy}</p>
+            <p><strong>Switch Threshold:</strong> ${threshold}</p>
+            <p><strong>Number of runs:</strong> ${runs}</p>`;
+    }
+
+    displayTwoPhaseResults(results) {
+        const stats = this.calculateStatistics(results);
+        const switchStats = this.calculateSwitchStatistics(results);
+        const paramSummary = this.createTwoPhaseParameterSummary(
+            results.earlyStrategy, 
+            results.lateStrategy, 
+            results.threshold,
+            results.runs
+        );
+        
+        const htmlContent = `
+            ${paramSummary}
+            <div class="mb-4">
+                <b>Two-Phase Analysis Results:</b><br>
+                ${results.earlyStrategy} → ${results.lateStrategy} (switch at ${results.threshold})<br><br>
+                
+                <b>Performance Statistics:</b><br>
+                Max tile achieved: <b>${stats.maxTile}</b><br>
+                Average max tile: <b>${stats.avgMaxTile.toFixed(1)}</b><br>
+                Average score: <b>${stats.avgScore.toFixed(0)}</b><br>
+                Average moves: <b>${stats.avgMoves.toFixed(1)}</b><br>
+                Average duration: <b>${stats.avgDuration.toFixed(0)}ms</b><br><br>
+                
+                <b>Strategy Switch Statistics:</b><br>
+                Games that switched: <b>${switchStats.switchedGames}/${results.runs} (${switchStats.switchPercentage.toFixed(1)}%)</b><br>
+                Average switch point: <b>${switchStats.avgSwitchPoint.toFixed(1)} moves</b><br><br>
+                
+                ${this.createDistributionTable(results.distribution)}
+            </div>
+        `;
+        
+        this.ui.showAnalysis(htmlContent);
+    }
+
+    calculateSwitchStatistics(results) {
+        if (!results.switchPoints || results.switchPoints.length === 0) {
+            return {
+                switchedGames: 0,
+                switchPercentage: 0,
+                avgSwitchPoint: 0
+            };
+        }
+        
+        const validSwitches = results.switchPoints.filter(sp => sp !== -1);
+        return {
+            switchedGames: validSwitches.length,
+            switchPercentage: (validSwitches.length / results.runs) * 100,
+            avgSwitchPoint: validSwitches.length > 0 ? validSwitches.reduce((a, b) => a + b, 0) / validSwitches.length : 0
+        };
+    }
+
+    createDistributionTable(distribution) {
+        if (!distribution || Object.keys(distribution).length === 0) {
+            return '<p><i>No distribution data available</i></p>';
+        }
+        
+        const total = Object.values(distribution).reduce((a, b) => a + b, 0);
+        
+        let html = '<div><strong>Max Tile Distribution:</strong><br>';
+        html += '<table style="border-collapse: collapse; margin-top: 8px;">';
+        html += '<tr><th style="border: 1px solid #ddd; padding: 4px 8px;">Tile</th><th style="border: 1px solid #ddd; padding: 4px 8px;">Count</th><th style="border: 1px solid #ddd; padding: 4px 8px;">%</th></tr>';
+        
+        Object.keys(distribution)
+            .map(Number)
+            .sort((a, b) => a - b)
+            .forEach(tile => {
+                const count = distribution[tile];
+                const percentage = ((count / total) * 100).toFixed(1);
+                html += `<tr><td style="border: 1px solid #ddd; padding: 4px 8px;">${tile}</td><td style="border: 1px solid #ddd; padding: 4px 8px;">${count}</td><td style="border: 1px solid #ddd; padding: 4px 8px;">${percentage}%</td></tr>`;
+            });
+        
+        html += '</table></div>';
+        return html;
     }
 
     // Utility function for async delays

@@ -23,9 +23,25 @@ class App2048 {
     setupEventListeners() {
         // Mode switching buttons
         this.ui.elements.controls.play?.addEventListener('click', () => this.setMode('play'));
-        this.ui.elements.controls.heuristic?.addEventListener('click', () => this.setMode('heuristic'));
-        this.ui.elements.controls.analysis?.addEventListener('click', () => this.setMode('analysis'));
+        this.ui.elements.controls.heuristic?.addEventListener('click', () => this.toggleEmulationPanel());
+        this.ui.elements.controls.analysis?.addEventListener('click', () => this.toggleAnalysisPanel());
         this.ui.elements.controls.reset?.addEventListener('click', () => this.resetGame());
+        
+        // New emulation controls
+        document.getElementById('btn-start-emulation')?.addEventListener('click', () => this.startEmulation());
+        document.getElementById('btn-stop-emulation')?.addEventListener('click', () => this.stopEmulation());
+        
+        // New analysis controls
+        document.getElementById('btn-start-analysis')?.addEventListener('click', () => this.startBatchAnalysis());
+        document.getElementById('btn-stop-analysis')?.addEventListener('click', () => this.stopAnalysis());
+        
+        // Analysis tab switching
+        document.querySelectorAll('.analysis-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                const mode = e.target.getAttribute('data-mode');
+                this.switchAnalysisTab(mode);
+            });
+        });
         
         // Export buttons
         this.ui.elements.controls.csv?.addEventListener('click', () => this.analysis.exportResults('csv'));
@@ -43,14 +59,8 @@ class App2048 {
         // Window resize handler
         window.addEventListener('resize', () => this.ui.updateLayoutForDevice());
         
-        // Heuristic selection changes
-        this.ui.elements.heuristicSelect?.addEventListener('change', () => {
-            this.ui.updateDescription(this.mode);
-        });
-        
-        this.ui.elements.twophase?.addEventListener('change', () => {
-            this.ui.updateDescription(this.mode);
-        });
+        // Close panels when clicking outside
+        document.addEventListener('click', (e) => this.handleOutsideClick(e));
     }
 
     setupKeyboardControls() {
@@ -102,10 +112,12 @@ class App2048 {
                 this.startManualPlay();
                 break;
             case 'heuristic':
-                this.startHeuristicEmulation();
+                // Don't auto-start emulation, just set the mode
+                this.ui.showNotification('Heuristic mode activated. Configure settings and click Start.', 'info');
                 break;
             case 'analysis':
-                this.startAnalysis();
+                // Don't auto-start analysis, just set the mode
+                this.ui.showNotification('Analysis mode activated. Configure settings and click Start.', 'info');
                 break;
         }
         
@@ -121,10 +133,16 @@ class App2048 {
         if (this.interval) {
             clearInterval(this.interval);
             this.interval = null;
+            this.resetEmulationButtons();
         }
         
         if (this.analysis.getStatus().isRunning) {
             this.analysis.stopAnalysis();
+            // Reset analysis button states
+            const startBtn = document.getElementById('btn-start-analysis');
+            const stopBtn = document.getElementById('btn-stop-analysis');
+            if (startBtn) startBtn.disabled = false;
+            if (stopBtn) stopBtn.disabled = true;
         }
     }
 
@@ -133,20 +151,25 @@ class App2048 {
     }
 
     startHeuristicEmulation(delay = 300) {
-        const heuristicType = this.ui.elements.heuristicSelect?.value || 'monotonicity';
-        const twoPhase = this.ui.elements.twophase?.checked || false;
+        // Read from the dropdown panel elements, not the old UI elements
+        const heuristicType = document.getElementById('heuristicSelect')?.value || 'monotonicity';
+        const twoPhase = document.getElementById('twophase')?.checked || false;
         
         this.ui.showNotification(`Starting ${heuristicType} heuristic emulation`, 'info');
         
         this.interval = setInterval(() => {
             if (this.mode !== 'heuristic') {
                 clearInterval(this.interval);
+                this.interval = null;
+                this.resetEmulationButtons();
                 return;
             }
             
             if (this.game.gameOver) {
                 clearInterval(this.interval);
+                this.interval = null;
                 this.ui.showNotification('Heuristic emulation finished - Game Over!', 'warning');
+                this.resetEmulationButtons();
                 return;
             }
             
@@ -161,27 +184,18 @@ class App2048 {
                 }
             } else {
                 clearInterval(this.interval);
+                this.interval = null;
                 this.ui.showNotification('No valid moves - Game Over!', 'warning');
+                this.resetEmulationButtons();
             }
         }, delay); // Delay in milliseconds
     }
 
-    async startAnalysis() {
-        const heuristicType = this.ui.elements.heuristicSelect?.value || 'monotonicity';
-        const twoPhase = this.ui.elements.twophase?.checked || false;
-        const settings = this.ui.getSettings();
-        const runs = settings.runs;
-        
-        this.ui.showNotification(`Starting analysis with ${runs} runs`, 'info');
-        
-        try {
-            const results = await this.analysis.runAnalysis(heuristicType, twoPhase, runs);
-            this.ui.showNotification('Analysis completed successfully!', 'success');
-            return results;
-        } catch (error) {
-            console.error('Analysis failed:', error);
-            this.ui.showNotification('Analysis failed. Check console for details.', 'error');
-        }
+    resetEmulationButtons() {
+        const startBtn = document.getElementById('btn-start-emulation');
+        const stopBtn = document.getElementById('btn-stop-emulation');
+        if (startBtn) startBtn.disabled = false;
+        if (stopBtn) stopBtn.disabled = true;
     }
 
     resetGame() {
@@ -192,8 +206,10 @@ class App2048 {
         this.ui.showNotification('Game reset', 'info');
         
         // Restart current mode if it was heuristic emulation
-        if (this.mode === 'heuristic') {
-            setTimeout(() => this.startHeuristicEmulation(), 500);
+        if (this.mode === 'heuristic' && this.interval) {
+            // If emulation was running, restart it with the same settings
+            const speed = parseFloat(document.getElementById('emulationSpeed')?.value) || 0.3;
+            setTimeout(() => this.startHeuristicEmulation(speed * 1000), 500);
         }
     }
 
@@ -210,7 +226,8 @@ class App2048 {
         // Update emulation speed if currently running
         if (this.interval) {
             clearInterval(this.interval);
-            this.startHeuristicEmulation(settings.pauseDuration * 1000);
+            const speed = parseFloat(document.getElementById('emulationSpeed')?.value) || 0.3;
+            this.startHeuristicEmulation(speed * 1000);
         }
         
         this.ui.showNotification('Settings applied successfully!', 'success');
@@ -365,6 +382,288 @@ class App2048 {
         
         console.log(`Average time for ${heuristicType}: ${avgTime.toFixed(2)}ms`);
         return avgTime;
+    }
+
+    // Panel management methods
+    toggleEmulationPanel() {
+        this.hideAllPanels();
+        const panel = document.getElementById('emulation-panel');
+        const button = document.getElementById('btn-heuristic');
+        
+        if (panel && button) {
+            panel.classList.toggle('hidden');
+            button.classList.toggle('button-active', !panel.classList.contains('hidden'));
+            this.updateControlsLayout(!panel.classList.contains('hidden'));
+            
+            if (!panel.classList.contains('hidden')) {
+                this.ui.showNotification('Configure emulation settings below', 'info');
+            }
+        }
+    }
+
+    toggleAnalysisPanel() {
+        this.hideAllPanels();
+        const panel = document.getElementById('analysis-panel');
+        const button = document.getElementById('btn-analysis');
+        
+        if (panel && button) {
+            panel.classList.toggle('hidden');
+            button.classList.toggle('button-active', !panel.classList.contains('hidden'));
+            this.updateControlsLayout(!panel.classList.contains('hidden'));
+            
+            if (!panel.classList.contains('hidden')) {
+                this.ui.showNotification('Configure analysis settings below', 'info');
+            }
+        }
+    }
+
+    hideAllPanels() {
+        const panels = ['emulation-panel', 'analysis-panel'];
+        const buttons = ['btn-heuristic', 'btn-analysis'];
+        
+        panels.forEach(panelId => {
+            const panel = document.getElementById(panelId);
+            if (panel) panel.classList.add('hidden');
+        });
+        
+        buttons.forEach(buttonId => {
+            const button = document.getElementById(buttonId);
+            if (button) button.classList.remove('button-active');
+        });
+        
+        this.updateControlsLayout(false);
+    }
+
+    updateControlsLayout(panelOpen) {
+        const controls = document.getElementById('controls');
+        if (controls) {
+            controls.classList.toggle('panel-open', panelOpen);
+        }
+    }
+
+    handleOutsideClick(e) {
+        // Don't close panels during emulation or analysis
+        if (this.interval || this.analysis.isRunning) {
+            return;
+        }
+        
+        const panels = document.querySelectorAll('.dropdown-panel:not(.hidden)');
+        const buttons = document.querySelectorAll('#btn-heuristic, #btn-analysis');
+        
+        let clickedInsidePanel = false;
+        let clickedButton = false;
+        
+        panels.forEach(panel => {
+            if (panel.contains(e.target)) {
+                clickedInsidePanel = true;
+            }
+        });
+        
+        buttons.forEach(button => {
+            if (button.contains(e.target)) {
+                clickedButton = true;
+            }
+        });
+        
+        if (!clickedInsidePanel && !clickedButton) {
+            this.hideAllPanels();
+        }
+    }
+
+    // Enhanced emulation methods
+    startEmulation() {
+        const heuristicType = document.getElementById('heuristicSelect')?.value || 'monotonicity';
+        const speed = parseFloat(document.getElementById('emulationSpeed')?.value) || 0.3;
+        const twoPhase = document.getElementById('twophase')?.checked || false;
+        
+        // Stop any running processes first
+        this.stopCurrentMode();
+        
+        // Set mode without auto-starting
+        this.mode = 'heuristic';
+        this.ui.updateDescription(this.mode);
+        
+        // Start emulation with the correct parameters
+        this.startHeuristicEmulation(speed * 1000); // Convert to milliseconds
+        
+        // Update button states
+        const startBtn = document.getElementById('btn-start-emulation');
+        const stopBtn = document.getElementById('btn-stop-emulation');
+        if (startBtn) startBtn.disabled = true;
+        if (stopBtn) stopBtn.disabled = false;
+        
+        this.ui.showNotification(`Starting ${heuristicType} emulation at ${speed}s per move`, 'info');
+    }
+
+    stopEmulation() {
+        this.stopCurrentMode();
+        
+        // Update button states
+        const startBtn = document.getElementById('btn-start-emulation');
+        const stopBtn = document.getElementById('btn-stop-emulation');
+        if (startBtn) startBtn.disabled = false;
+        if (stopBtn) stopBtn.disabled = true;
+        
+        this.ui.showNotification('Emulation stopped', 'warning');
+    }
+
+    // Enhanced analysis methods
+    async startBatchAnalysis() {
+        const analysisMode = this.getCurrentAnalysisMode();
+        
+        // Update button states
+        const startBtn = document.getElementById('btn-start-analysis');
+        const stopBtn = document.getElementById('btn-stop-analysis');
+        if (startBtn) startBtn.disabled = true;
+        if (stopBtn) stopBtn.disabled = false;
+        
+        try {
+            if (analysisMode === 'compare') {
+                await this.runMultipleStrategyAnalysis();
+            } else if (analysisMode === 'twophase') {
+                await this.runTwoPhaseAnalysis();
+            } else {
+                await this.runSingleStrategyAnalysis();
+            }
+        } finally {
+            // Reset button states
+            if (startBtn) startBtn.disabled = false;
+            if (stopBtn) stopBtn.disabled = true;
+        }
+    }
+
+    async runSingleStrategyAnalysis() {
+        const heuristicType = document.getElementById('analysisHeuristic')?.value || 'monotonicity';
+        const runs = parseInt(document.getElementById('analysisRuns')?.value) || 20;
+        
+        const description = this.getAnalysisDescription();
+        this.ui.showNotification(`Starting: ${description} (${runs} games)`, 'info');
+        
+        try {
+            const results = await this.analysis.runAnalysis(heuristicType, false, runs);
+            this.ui.showNotification('Single strategy analysis completed!', 'success');
+            return results;
+        } catch (error) {
+            console.error('Analysis failed:', error);
+            this.ui.showNotification('Analysis failed. Check console for details.', 'error');
+        }
+    }
+
+    async runMultipleStrategyAnalysis() {
+        const checkboxes = document.querySelectorAll('.strategy-checkboxes input:checked');
+        const strategies = Array.from(checkboxes).map(cb => cb.value);
+        const runs = parseInt(document.getElementById('analysisRuns')?.value) || 20;
+        
+        if (strategies.length === 0) {
+            this.ui.showNotification('Please select at least one strategy to compare', 'warning');
+            return;
+        }
+        
+        if (strategies.length === 1) {
+            this.ui.showNotification('Select multiple strategies for comparison, or use Single Strategy mode', 'warning');
+            return;
+        }
+        
+        const description = this.getAnalysisDescription();
+        this.ui.showNotification(`Starting: ${description} (${runs} games)`, 'info');
+        
+        try {
+            const results = await this.analysis.runComparisonAnalysis(strategies, false, runs);
+            this.ui.showNotification('Multi-strategy comparison completed!', 'success');
+            return results;
+        } catch (error) {
+            console.error('Comparison analysis failed:', error);
+            this.ui.showNotification('Comparison analysis failed. Check console for details.', 'error');
+        }
+    }
+
+    async runTwoPhaseAnalysis() {
+        const earlyStrategy = document.getElementById('twophaseEarly')?.value || 'corner';
+        const lateStrategy = document.getElementById('twophaseLate')?.value || 'expectimaxCorner';
+        const threshold = parseInt(document.getElementById('twophaseThreshold')?.value) || 128;
+        const runs = parseInt(document.getElementById('analysisRuns')?.value) || 20;
+        
+        if (earlyStrategy === lateStrategy) {
+            this.ui.showNotification('Please select different strategies for early and late game', 'warning');
+            return;
+        }
+        
+        const description = this.getAnalysisDescription();
+        this.ui.showNotification(`Starting: ${description} (${runs} games)`, 'info');
+        
+        try {
+            const results = await this.analysis.runTwoPhaseAnalysis(earlyStrategy, lateStrategy, threshold, runs);
+            this.ui.showNotification('Two-phase strategy analysis completed!', 'success');
+            return results;
+        } catch (error) {
+            console.error('Two-phase analysis failed:', error);
+            this.ui.showNotification('Two-phase analysis failed. Check console for details.', 'error');
+        }
+    }
+
+    stopAnalysis() {
+        this.analysis.stopAnalysis();
+        
+        // Update button states
+        const startBtn = document.getElementById('btn-start-analysis');
+        const stopBtn = document.getElementById('btn-stop-analysis');
+        if (startBtn) startBtn.disabled = false;
+        if (stopBtn) stopBtn.disabled = true;
+        
+        this.ui.showNotification('Analysis stopped', 'warning');
+    }
+
+    // Helper method to get analysis description
+    getAnalysisDescription() {
+        const analysisMode = this.getCurrentAnalysisMode();
+        
+        if (analysisMode === 'compare') {
+            const checkboxes = document.querySelectorAll('.strategy-checkboxes input:checked');
+            const strategies = Array.from(checkboxes).map(cb => cb.value);
+            const strategyNames = Array.from(checkboxes).map(cb => cb.nextSibling.textContent.trim());
+            
+            if (strategies.length === 0) {
+                return 'No strategies selected for comparison';
+            }
+            
+            return `Compare ${strategies.length} strategies: ${strategyNames.join(', ')}`;
+        } else if (analysisMode === 'twophase') {
+            const earlyStrategy = document.getElementById('twophaseEarly')?.value || 'corner';
+            const lateStrategy = document.getElementById('twophaseLate')?.value || 'expectimaxCorner';
+            const threshold = parseInt(document.getElementById('twophaseThreshold')?.value) || 128;
+            
+            const earlySelect = document.getElementById('twophaseEarly');
+            const lateSelect = document.getElementById('twophaseLate');
+            const earlyName = earlySelect?.options[earlySelect.selectedIndex]?.text || earlyStrategy;
+            const lateName = lateSelect?.options[lateSelect.selectedIndex]?.text || lateStrategy;
+            
+            return `Two-phase: ${earlyName} → ${lateName} (switch at ${threshold})`;
+        } else {
+            const heuristicType = document.getElementById('analysisHeuristic')?.value || 'monotonicity';
+            const select = document.getElementById('analysisHeuristic');
+            const heuristicName = select?.options[select.selectedIndex]?.text || heuristicType;
+            
+            return `Analyze ${heuristicName}`;
+        }
+    }
+
+    switchAnalysisTab(mode) {
+        // Update tab buttons
+        document.querySelectorAll('.analysis-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        document.querySelector(`[data-mode="${mode}"]`)?.classList.add('active');
+        
+        // Update tab content
+        document.querySelectorAll('.analysis-tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        document.getElementById(`analysis-${mode}`)?.classList.add('active');
+    }
+
+    getCurrentAnalysisMode() {
+        const activeTab = document.querySelector('.analysis-tab.active');
+        return activeTab?.getAttribute('data-mode') || 'single';
     }
 }
 

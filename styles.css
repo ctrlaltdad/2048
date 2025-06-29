@@ -365,6 +365,21 @@ select {
     cursor: not-allowed;
 }
 
+/* Button styling improvements */
+.nav-button:disabled,
+.button-primary:disabled {
+    background: #ccc !important;
+    color: #999 !important;
+    cursor: not-allowed !important;
+    opacity: 0.6;
+}
+
+.nav-button:disabled:hover,
+.button-primary:disabled:hover {
+    background: #ccc !important;
+    transform: none !important;
+}
+
 .button-group {
     display: flex;
     gap: 10px;
@@ -402,6 +417,274 @@ select {
     margin-top: 5px;
 }
 
+/* Dropdown Panels */
+.dropdown-panel {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border: 2px solid #bbada0;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    z-index: 1000;
+    margin-top: 10px;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Analysis panel needs more width for multiple strategies */
+#analysis-panel {
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.dropdown-panel h3 {
+    margin-top: 0;
+    margin-bottom: 16px;
+    color: #776e65;
+    border-bottom: 2px solid #f2b179;
+    padding-bottom: 8px;
+}
+
+.setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    gap: 12px;
+}
+
+.setting-row label {
+    font-weight: 500;
+    color: #776e65;
+    white-space: nowrap;
+}
+
+.setting-row input, .setting-row select {
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    min-width: 120px;
+}
+
+.button-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    justify-content: center;
+}
+
+/* Strategy checkboxes - more compact for tab layout */
+.strategy-checkboxes {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px 8px;
+    margin-top: 8px;
+    padding: 12px;
+    background: #f9f9f9;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+}
+
+.strategy-checkboxes label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.strategy-checkboxes input[type="checkbox"] {
+    min-width: auto;
+}
+
+/* Controls positioning */
+#controls {
+    position: relative;
+    margin-bottom: 40px;
+    transition: margin-bottom 0.3s ease;
+}
+
+#controls.panel-open {
+    margin-bottom: 200px; /* Extra space when panel is open */
+}
+
+/* Button states */
+.button-active {
+    background: #f2b179 !important;
+    color: #ffffff !important;
+    font-weight: bold;
+}
+
+/* Comparison Results Styling */
+.comparison-results {
+    margin-top: 20px;
+}
+
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.comparison-table th,
+.comparison-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.comparison-table th {
+    background: #8f7a66;
+    color: white;
+    font-weight: bold;
+}
+
+.comparison-table tr:hover {
+    background: #f5f5f5;
+}
+
+.comparison-table tr:last-child td {
+    border-bottom: none;
+}
+
+.best-strategy {
+    margin-top: 20px;
+    padding: 16px;
+    background: linear-gradient(135deg, #f2b179, #f59563);
+    color: white;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.best-strategy h4 {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+}
+
+.best-strategy p {
+    margin: 0;
+    opacity: 0.9;
+}
+
+/* Analysis panel specific improvements */
+#analysis-panel {
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Analysis tabs styling */
+.analysis-tabs {
+    display: flex;
+    margin-bottom: 16px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.analysis-tab {
+    flex: 1;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #666;
+    transition: all 0.2s ease;
+}
+
+.analysis-tab:hover {
+    background: #e9ecef;
+    color: #333;
+}
+
+.analysis-tab.active {
+    background: white;
+    color: #4a90e2;
+    border-bottom-color: #4a90e2;
+}
+
+/* Analysis tab content */
+.analysis-tab-content {
+    display: none;
+    min-height: 80px;
+}
+
+.analysis-tab-content.active {
+    display: block;
+}
+
+/* Two-phase grid layout */
+.twophase-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.twophase-grid .setting-row:last-child {
+    grid-column: 1 / -1;
+}
+
+/* Common analysis settings */
+.analysis-common {
+    margin-top: 16px;
+    border-top: 1px solid #e0e0e0;
+    padding-top: 16px;
+}
+
+.analysis-common .setting-row {
+    margin-bottom: 12px;
+}
+
+/* Radio group improvements */
+.radio-group {
+    background: #f8f8f8;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+}
+
+/* Two-phase strategy settings styling */
+#twophase-strategy-settings {
+    transition: all 0.3s ease;
+    border-top: 1px solid #e0e0e0;
+    padding-top: 16px;
+    margin-top: 16px;
+    background: #f8fffe;
+    padding: 16px;
+    border-radius: 6px;
+    border: 1px solid #d4edda;
+}
+
+#twophase-strategy-settings .setting-row {
+    margin-bottom: 14px;
+}
+
+#twophase-strategy-settings label {
+    font-weight: 600;
+    color: #155724;
+    min-width: 140px;
+}
+
+#twophase-strategy-settings select {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid #c3e6cb;
+    border-radius: 4px;
+    background: white;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .main-container {
@@ -436,6 +719,51 @@ select {
     
     .tile-4096 {
         font-size: 1em;
+    }
+    
+    #analysis-panel {
+        max-width: 95vw;
+        margin-left: 2.5vw;
+        margin-right: 2.5vw;
+    }
+    
+    .analysis-tabs {
+        flex-direction: column;
+        gap: 2px;
+    }
+    
+    .analysis-tab {
+        border-radius: 4px;
+        margin-bottom: 2px;
+    }
+    
+    .twophase-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .strategy-checkboxes {
+        grid-template-columns: 1fr 1fr;
+        font-size: 11px;
+    }
+    
+    .strategy-checkboxes label {
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 480px) {
+    .strategy-checkboxes {
+        grid-template-columns: 1fr;
+    }
+    
+    .dropdown-panel {
+        padding: 16px;
+    }
+    
+    .analysis-tab {
+        font-size: 12px;
+        padding: 6px 8px;
     }
 }
 

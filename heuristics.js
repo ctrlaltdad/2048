@@ -187,7 +187,7 @@ class Heuristics {
     }
 
     // High-performance proven strategy: Expectimax with corner bias
-    evaluateExpectimaxCorner(board, depth = 4) {
+    evaluateExpectimaxCorner(board, depth = 2) {
         if (depth === 0) {
             return this.evaluateCornerOptimized(board);
         }
@@ -200,7 +200,7 @@ class Heuristics {
             tempGame.board = board.map(row => [...row]);
             
             if (tempGame.move(moveDir)) {
-                // Simulate tile placement more accurately
+                // Simulate tile placement more efficiently - only test a few positions
                 const emptyPositions = [];
                 for (let i = 0; i < 4; i++) {
                     for (let j = 0; j < 4; j++) {
@@ -212,9 +212,10 @@ class Heuristics {
                 
                 if (emptyPositions.length > 0) {
                     let expectedScore = 0;
-                    const totalEmpty = emptyPositions.length;
+                    // Limit to maximum 4 positions to test for performance
+                    const positionsToTest = emptyPositions.slice(0, Math.min(4, emptyPositions.length));
                     
-                    emptyPositions.forEach(([i, j]) => {
+                    positionsToTest.forEach(([i, j]) => {
                         // 90% chance of 2, 10% chance of 4
                         tempGame.board[i][j] = 2;
                         expectedScore += 0.9 * this.evaluateExpectimaxCorner(tempGame.board, depth - 1);
@@ -225,7 +226,7 @@ class Heuristics {
                         tempGame.board[i][j] = 0;
                     });
                     
-                    expectedScore /= totalEmpty;
+                    expectedScore /= positionsToTest.length;
                     bestScore = Math.max(bestScore, expectedScore);
                 }
             }

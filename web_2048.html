@@ -3,40 +3,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2048 Web Game</title>
+    <title>2048 Emulator and Simulator</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>2048 Web Game</h1>
+    <h1>2048 Emulator and Simulator</h1>
     
     <div id="controls">
         <button id="btn-play">Play</button>
         <button id="btn-heuristic">Emulate Heuristic</button>
         <button id="btn-analysis">Run Analysis</button>
-        
-        <select id="heuristicSelect">
-            <option value="monotonicity">Monotonicity</option>
-            <option value="corner">Corner</option>
-            <option value="center">Center</option>
-            <option value="expectimax">Expectimax</option>
-            <option value="expectimaxCorner">Expectimax Corner ⭐</option>
-            <option value="gradientDescent">Gradient Descent ⭐</option>
-            <option value="opportunistic">Opportunistic</option>
-            <option value="smoothness">Smoothness</option>
-            <option value="adaptive">Adaptive</option>
-            <option value="ultraAdaptive">Ultra-Adaptive</option>
-            <option value="advancedMinimax">Advanced Minimax</option>
-            <option value="weighted">Weighted Combo</option>
-            <option value="mlsim">ML Sim ⭐</option>
-        </select>
-        
-        <label>
-            <input type="checkbox" id="twophase"> Two-Phase
-        </label>
-        
         <button id="btn-reset">Reset</button>
         <button id="btn-csv">Export CSV</button>
         <button id="btn-html">Export HTML</button>
+        
+        <!-- Emulation Settings Panel -->
+        <div id="emulation-panel" class="dropdown-panel hidden">
+            <h3>Heuristic Emulation Settings</h3>
+            <div class="setting-row">
+                <label for="heuristicSelect">Strategy:</label>
+                <select id="heuristicSelect">
+                    <option value="monotonicity">Monotonicity</option>
+                    <option value="corner">Corner</option>
+                    <option value="center">Center</option>
+                    <option value="expectimax">Expectimax</option>
+                    <option value="expectimaxCorner">Expectimax Corner ⭐</option>
+                    <option value="gradientDescent">Gradient Descent ⭐</option>
+                    <option value="opportunistic">Opportunistic</option>
+                    <option value="smoothness">Smoothness</option>
+                    <option value="adaptive">Adaptive</option>
+                    <option value="ultraAdaptive">Ultra-Adaptive</option>
+                    <option value="advancedMinimax">Advanced Minimax</option>
+                    <option value="weighted">Weighted Combo</option>
+                    <option value="mlsim">ML Sim ⭐</option>
+                </select>
+            </div>
+            <div class="setting-row">
+                <label for="emulationSpeed">Speed (seconds per move):</label>
+                <input type="number" id="emulationSpeed" value="0.3" step="0.1" min="0.1" max="5">
+            </div>
+            <div class="setting-row">
+                <label>
+                    <input type="checkbox" id="twophase"> Two-Phase Strategy
+                </label>
+            </div>
+            <div class="button-row">
+                <button id="btn-start-emulation" class="button-primary">Start Emulation</button>
+                <button id="btn-stop-emulation" class="nav-button" disabled>Stop</button>
+            </div>
+        </div>
+        
+        <!-- Analysis Settings Panel -->
+        <div id="analysis-panel" class="dropdown-panel hidden">
+            <h3>Batch Analysis Settings</h3>
+            
+            <!-- Analysis Mode Tabs -->
+            <div class="analysis-tabs">
+                <button class="analysis-tab active" data-mode="single">Single Strategy</button>
+                <button class="analysis-tab" data-mode="compare">Compare Multiple</button>
+                <button class="analysis-tab" data-mode="twophase">Two-Phase</button>
+            </div>
+            
+            <!-- Single Strategy Tab Content -->
+            <div id="analysis-single" class="analysis-tab-content active">
+                <div class="setting-row">
+                    <label for="analysisHeuristic">Strategy:</label>
+                    <select id="analysisHeuristic">
+                        <option value="monotonicity">Monotonicity</option>
+                        <option value="corner">Corner</option>
+                        <option value="center">Center</option>
+                        <option value="expectimax">Expectimax</option>
+                        <option value="expectimaxCorner">Expectimax Corner ⭐</option>
+                        <option value="gradientDescent">Gradient Descent ⭐</option>
+                        <option value="opportunistic">Opportunistic</option>
+                        <option value="smoothness">Smoothness</option>
+                        <option value="adaptive">Adaptive</option>
+                        <option value="ultraAdaptive">Ultra-Adaptive</option>
+                        <option value="advancedMinimax">Advanced Minimax</option>
+                        <option value="weighted">Weighted Combo</option>
+                        <option value="mlsim">ML Sim ⭐</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Compare Multiple Tab Content -->
+            <div id="analysis-compare" class="analysis-tab-content hidden">
+                <div class="strategy-checkboxes">
+                    <label><input type="checkbox" value="expectimaxCorner" checked> Expectimax Corner ⭐</label>
+                    <label><input type="checkbox" value="mlsim" checked> ML Sim ⭐</label>
+                    <label><input type="checkbox" value="gradientDescent" checked> Gradient Descent ⭐</label>
+                    <label><input type="checkbox" value="ultraAdaptive"> Ultra-Adaptive</label>
+                    <label><input type="checkbox" value="adaptive"> Adaptive</label>
+                    <label><input type="checkbox" value="corner"> Corner</label>
+                    <label><input type="checkbox" value="monotonicity"> Monotonicity</label>
+                    <label><input type="checkbox" value="expectimax"> Expectimax</label>
+                </div>
+            </div>
+            
+            <!-- Two-Phase Tab Content -->
+            <div id="analysis-twophase" class="analysis-tab-content hidden">
+                <div class="twophase-grid">
+                    <div class="setting-row">
+                        <label for="twophaseEarly">Early:</label>
+                        <select id="twophaseEarly">
+                            <option value="corner" selected>Corner</option>
+                            <option value="monotonicity">Monotonicity</option>
+                            <option value="center">Center</option>
+                            <option value="expectimax">Expectimax</option>
+                            <option value="expectimaxCorner">Expectimax Corner ⭐</option>
+                            <option value="gradientDescent">Gradient Descent ⭐</option>
+                            <option value="opportunistic">Opportunistic</option>
+                            <option value="smoothness">Smoothness</option>
+                            <option value="adaptive">Adaptive</option>
+                            <option value="ultraAdaptive">Ultra-Adaptive</option>
+                            <option value="advancedMinimax">Advanced Minimax</option>
+                            <option value="weighted">Weighted Combo</option>
+                            <option value="mlsim">ML Sim ⭐</option>
+                        </select>
+                    </div>
+                    <div class="setting-row">
+                        <label for="twophaseLate">Late:</label>
+                        <select id="twophaseLate">
+                            <option value="expectimaxCorner" selected>Expectimax Corner ⭐</option>
+                            <option value="mlsim">ML Sim ⭐</option>
+                            <option value="gradientDescent">Gradient Descent ⭐</option>
+                            <option value="ultraAdaptive">Ultra-Adaptive</option>
+                            <option value="adaptive">Adaptive</option>
+                            <option value="corner">Corner</option>
+                            <option value="monotonicity">Monotonicity</option>
+                            <option value="center">Center</option>
+                            <option value="expectimax">Expectimax</option>
+                            <option value="opportunistic">Opportunistic</option>
+                            <option value="smoothness">Smoothness</option>
+                            <option value="advancedMinimax">Advanced Minimax</option>
+                            <option value="weighted">Weighted Combo</option>
+                        </select>
+                    </div>
+                    <div class="setting-row">
+                        <label for="twophaseThreshold">Switch at:</label>
+                        <select id="twophaseThreshold">
+                            <option value="64">64</option>
+                            <option value="128" selected>128</option>
+                            <option value="256">256</option>
+                            <option value="512">512</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Common Settings -->
+            <div class="analysis-common">
+                <div class="setting-row">
+                    <label for="analysisRuns">Games:</label>
+                    <input type="number" id="analysisRuns" value="20" min="1" max="1000">
+                </div>
+                <div class="button-row">
+                    <button id="btn-start-analysis" class="button-primary">Start Analysis</button>
+                    <button id="btn-stop-analysis" class="nav-button" disabled>Stop</button>
+                </div>
+            </div>
+        </div>
     </div>
     
     <div class="main-container">

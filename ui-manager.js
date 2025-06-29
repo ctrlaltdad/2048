@@ -159,6 +159,8 @@ class UIManager {
     showAnalysis(content) {
         if (this.elements.analysis) {
             this.elements.analysis.innerHTML = content;
+            this.elements.analysis.style.display = 'block';
+            this.elements.analysis.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
     }
 
