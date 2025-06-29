@@ -180,10 +180,22 @@
             </div>
             
             <div id="tab-content-desc" class="tab-content">
-                <b>Mode:</b> <span id="desc-mode">Play</span><br><br>
-                <b>Heuristic:</b> <span id="desc-heuristic">N/A</span><br><br>
-                <div id="desc-details">
-                    Use arrow keys or WASD to play manually. Select a mode above.
+                <div class="description-panel">
+                    <h3>2048 Analysis Tool Guide</h3>
+                    
+                    <div class="description-section">
+                        <h4>What would you like to learn about?</h4>
+                        <select id="desc-topic" class="description-dropdown">
+                            <option value="overview">Overview - Getting Started</option>
+                            <option value="analysis-modes">Analysis Modes</option>
+                            <option value="heuristics">Strategy Heuristics</option>
+                            <option value="tips">Tips & Best Practices</option>
+                        </select>
+                    </div>
+                    
+                    <div id="desc-content" class="description-content">
+                        <!-- Content will be populated by JavaScript -->
+                    </div>
                 </div>
             </div>
             

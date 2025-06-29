@@ -1,9 +1,11 @@
-// UI Manager Module
+// UI Manager for 2048 game interface
 class UIManager {
     constructor() {
         this.currentTab = 'desc';
         this.elements = this.initializeElements();
         this.setupEventListeners();
+        // Show default content on load
+        this.updateDescriptionContent('overview');
     }
 
     initializeElements() {
@@ -47,110 +49,255 @@ class UIManager {
         // Heuristic selection changes
         this.elements.heuristicSelect?.addEventListener('change', () => this.updateDescription());
         this.elements.twophase?.addEventListener('change', () => this.updateDescription());
+        
+        // Description system setup
+        this.setupDescriptionSystem();
     }
 
-    // Board rendering
+    setupDescriptionSystem() {
+        const descTopicSelect = document.getElementById('desc-topic');
+        if (descTopicSelect) {
+            descTopicSelect.addEventListener('change', (e) => {
+                this.updateDescriptionContent(e.target.value);
+            });
+        }
+    }
+
+    showTab(tabName) {
+        // Hide all tab contents
+        ['desc', 'stats', 'settings'].forEach(tab => {
+            const content = document.getElementById(`tab-content-${tab}`);
+            const tabButton = document.getElementById(`tab-${tab}`);
+            if (content) content.style.display = 'none';
+            if (tabButton) tabButton.classList.remove('active');
+        });
+
+        // Show selected tab
+        const selectedContent = document.getElementById(`tab-content-${tabName}`);
+        const selectedTab = document.getElementById(`tab-${tabName}`);
+        if (selectedContent) selectedContent.style.display = 'block';
+        if (selectedTab) selectedTab.classList.add('active');
+        
+        this.currentTab = tabName;
+    }
+
+    updateDescription() {
+        const heuristic = this.elements.heuristicSelect?.value;
+        const isTwoPhase = this.elements.twophase?.checked;
+        
+        if (this.elements.descHeuristic) {
+            this.elements.descHeuristic.textContent = heuristic || 'None selected';
+        }
+        
+        if (this.elements.descMode) {
+            this.elements.descMode.textContent = isTwoPhase ? 'Two-phase' : 'Single-phase';
+        }
+        
+        // Update details based on heuristic
+        let details = '';
+        switch (heuristic) {
+            case 'monotonicity':
+                details = 'Maintains ordered sequences in rows/columns for better tile organization. Focuses on keeping tiles in monotonic order to build larger tiles systematically.';
+                break;
+            case 'corner':
+                details = 'Keeps the highest tile in a corner position. This prevents the largest tile from being trapped and allows for better merging opportunities.';
+                break;
+            case 'center':
+                details = 'Focuses on building large tiles toward the center of the board. Useful for creating merge opportunities from multiple directions.';
+                break;
+            case 'expectimax':
+                details = 'Uses probabilistic search to evaluate future game states. Considers the random tile placement and calculates expected outcomes.';
+                break;
+            case 'expectimaxCorner':
+                details = 'Enhanced expectimax specifically optimized for corner strategy. Combines probabilistic search with corner positioning for superior performance. ⭐ Recommended';
+                break;
+            case 'gradientDescent':
+                details = 'Uses mathematical optimization to find the best move direction. Continuously improves decision-making through gradient-based learning. ⭐ Recommended';
+                break;
+            case 'opportunistic':
+                details = 'Adapts strategy based on current board state. Switches between different approaches depending on available opportunities.';
+                break;
+            case 'smoothness':
+                details = 'Minimizes tile value differences between adjacent cells. Creates more uniform board states that are easier to manage and merge.';
+                break;
+            case 'adaptive':
+                details = 'Dynamically adjusts strategy based on game progression. Changes behavior in early, mid, and late game phases for optimal performance.';
+                break;
+            case 'ultraAdaptive':
+                details = 'Advanced adaptive strategy with more sophisticated phase detection. Uses multiple metrics to determine the best approach for each game state.';
+                break;
+            case 'advancedMinimax':
+                details = 'Enhanced minimax algorithm with deeper search and better evaluation. Looks further ahead to make more informed decisions.';
+                break;
+            case 'weighted':
+                details = 'Combines multiple heuristics with weighted importance. Balances different strategies to leverage the strengths of each approach.';
+                break;
+            case 'mlsim':
+                details = 'Machine learning simulation that mimics successful gameplay patterns. Uses pattern recognition to make human-like strategic decisions. ⭐ Recommended';
+                break;
+            default:
+                details = 'Select a heuristic to see its description.';
+        }
+        
+        if (this.elements.descDetails) {
+            this.elements.descDetails.textContent = details;
+        }
+    }
+
+    updateDescriptionContent(topic) {
+        const contentDiv = document.getElementById('desc-content');
+        if (!contentDiv) return;
+        
+        const content = this.getDescriptionContent(topic);
+        contentDiv.innerHTML = content;
+    }
+
+    getDescriptionContent(topic) {
+        switch (topic) {
+            case 'overview':
+                return `<h4>🎮 Welcome to the 2048 Analysis Tool</h4>
+                    <p>This tool helps you analyze and improve your 2048 gameplay using various AI strategies and analysis modes.</p>
+                    <h4>🚀 Getting Started</h4>
+                    <ul>
+                        <li><strong>Play Mode:</strong> Use arrow keys or WASD to play manually</li>
+                        <li><strong>Emulation Mode:</strong> Watch AI strategies play automatically</li>
+                        <li><strong>Analysis Mode:</strong> Compare strategies and find the best approach</li>
+                    </ul>`;
+                
+            case 'analysis-modes':
+                return `<h4>📊 Analysis Modes</h4>
+                    <p>Choose the right analysis mode for your needs:</p>
+                    <ul>
+                        <li><strong>Single Strategy:</strong> Test one strategy across multiple games</li>
+                        <li><strong>Strategy Comparison:</strong> Compare multiple strategies head-to-head</li>
+                        <li><strong>Parameter Optimization:</strong> Find the best parameters for a strategy</li>
+                    </ul>
+                    <p>Each mode provides detailed statistics and performance metrics.</p>`;
+                
+            case 'heuristics':
+                return `<h4>🧠 Strategy Heuristics</h4>
+                    <p>Understanding the different AI strategies available:</p>
+                    <div class="heuristics-grid">
+                        <div class="heuristic-item">
+                            <h5>Monotonicity</h5>
+                            <p>Maintains ordered sequences in rows/columns for better tile organization. Focuses on keeping tiles in monotonic order to build larger tiles systematically.</p>
+                        </div>
+                        <div class="heuristic-item">
+                            <h5>Corner Strategy</h5>
+                            <p>Keeps the highest tile in a corner position. This prevents the largest tile from being trapped and allows for better merging opportunities.</p>
+                        </div>
+                        <div class="heuristic-item">
+                            <h5>Center Strategy</h5>
+                            <p>Focuses on building large tiles toward the center of the board. Useful for creating merge opportunities from multiple directions.</p>
+                        </div>
+                        <div class="heuristic-item">
+                            <h5>Expectimax</h5>
+                            <p>Uses probabilistic search to evaluate future game states. Considers the random tile placement and calculates expected outcomes.</p>
+                        </div>
+                        <div class="heuristic-item">
+                            <h5>Expectimax Corner ⭐</h5>
+                            <p>Enhanced expectimax specifically optimized for corner strategy. Combines probabilistic search with corner positioning for superior performance.</p>
+                        </div>
+                        <div class="heuristic-item">
+                            <h5>Gradient Descent ⭐</h5>
+                            <p>Uses mathematical optimization to find the best move direction. Continuously improves decision-making through gradient-based learning.</p>
+                        </div>
+                        <div class="heuristic-item">
+                            <h5>Opportunistic</h5>
+                            <p>Adapts strategy based on current board state. Switches between different approaches depending on available opportunities.</p>
+                        </div>
+                        <div class="heuristic-item">
+                            <h5>Smoothness</h5>
+                            <p>Minimizes tile value differences between adjacent cells. Creates more uniform board states that are easier to manage and merge.</p>
+                        </div>
+                        <div class="heuristic-item">
+                            <h5>Adaptive</h5>
+                            <p>Dynamically adjusts strategy based on game progression. Changes behavior in early, mid, and late game phases for optimal performance.</p>
+                        </div>
+                        <div class="heuristic-item">
+                            <h5>Ultra-Adaptive</h5>
+                            <p>Advanced adaptive strategy with more sophisticated phase detection. Uses multiple metrics to determine the best approach for each game state.</p>
+                        </div>
+                        <div class="heuristic-item">
+                            <h5>Advanced Minimax</h5>
+                            <p>Enhanced minimax algorithm with deeper search and better evaluation. Looks further ahead to make more informed decisions.</p>
+                        </div>
+                        <div class="heuristic-item">
+                            <h5>Weighted Combo</h5>
+                            <p>Combines multiple heuristics with weighted importance. Balances different strategies to leverage the strengths of each approach.</p>
+                        </div>
+                        <div class="heuristic-item">
+                            <h5>ML Sim ⭐</h5>
+                            <p>Machine learning simulation that mimics successful gameplay patterns. Uses pattern recognition to make human-like strategic decisions.</p>
+                        </div>
+                    </div>
+                    <p><strong>⭐ Recommended:</strong> These strategies typically perform best and are recommended for serious analysis.</p>
+                    <p><strong>Two-Phase:</strong> All strategies can be combined with monotonicity in a two-phase approach for potentially better results.</p>`;
+                
+            case 'tips':
+                return `<h4>💡 Tips & Best Practices</h4>
+                    <ul>
+                        <li><strong>Start with comparisons:</strong> Use strategy comparison to find the best approach</li>
+                        <li><strong>Run multiple games:</strong> Use at least 10 games for reliable statistics</li>
+                        <li><strong>Try two-phase strategies:</strong> Often more effective than single-phase</li>
+                        <li><strong>Watch emulations:</strong> Learn from AI moves and patterns</li>
+                        <li><strong>Optimize parameters:</strong> Fine-tune strategies for better performance</li>
+                        <li><strong>Export results:</strong> Save your analysis for future reference</li>
+                    </ul>
+                    <p>Remember: The best strategy depends on your goals - highest score, reaching 2048, or consistent performance.</p>`;
+                
+            default:
+                return '<p>Select a topic to learn more about the 2048 Analysis Tool.</p>';
+        }
+    }
+
+    // Board display methods
     drawBoard(game) {
+        this.updateBoard(game.board);
+        this.updateScore(game.score);
+    }
+
+    updateBoard(board) {
         if (!this.elements.board) return;
         
-        let html = '';
-        for (let i = 0; i < 4; i++) {
-            for (let j = 0; j < 4; j++) {
-                const value = game.board[i][j];
-                const displayValue = value ? value : '';
-                html += `<div class="tile tile-${value}">${displayValue}</div>`;
+        const boardElement = this.elements.board;
+        boardElement.innerHTML = '';
+        
+        for (let r = 0; r < 4; r++) {
+            for (let c = 0; c < 4; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'tile';
+                
+                const value = board[r][c];
+                if (value > 0) {
+                    cell.textContent = value;
+                    cell.classList.add(`tile-${value}`);
+                } else {
+                    cell.classList.add('tile-0');
+                }
+                
+                boardElement.appendChild(cell);
             }
-        }
-        
-        this.elements.board.innerHTML = html;
-        this.updateGameInfo(game);
-    }
-
-    updateGameInfo(game) {
-        if (!this.elements.log) return;
-        
-        let info = `Score: ${game.score}`;
-        if (game.gameOver) {
-            info += ' | Game Over!';
-        }
-        
-        this.elements.log.textContent = info;
-    }
-
-    // Tab management
-    showTab(tabName) {
-        this.currentTab = tabName;
-        
-        // Update tab content visibility
-        if (this.elements.tabContentDesc) {
-            if (tabName === 'desc') {
-                this.elements.tabContentDesc.classList.remove('hidden');
-            } else {
-                this.elements.tabContentDesc.classList.add('hidden');
-            }
-        }
-        if (this.elements.tabContentStats) {
-            if (tabName === 'stats') {
-                this.elements.tabContentStats.classList.remove('hidden');
-            } else {
-                this.elements.tabContentStats.classList.add('hidden');
-            }
-        }
-        if (this.elements.tabContentSettings) {
-            if (tabName === 'settings') {
-                this.elements.tabContentSettings.classList.remove('hidden');
-            } else {
-                this.elements.tabContentSettings.classList.add('hidden');
-            }
-        }
-        
-        // Update tab button styles
-        if (this.elements.tabDesc) {
-            this.elements.tabDesc.className = `tab-button ${tabName === 'desc' ? 'active' : ''}`;
-        }
-        if (this.elements.tabStats) {
-            this.elements.tabStats.className = `tab-button ${tabName === 'stats' ? 'active' : ''}`;
-        }
-        if (this.elements.tabSettings) {
-            this.elements.tabSettings.className = `tab-button ${tabName === 'settings' ? 'active' : ''}`;
         }
     }
 
-    // Description panel updates
-    updateDescription(mode = 'play') {
-        const modeMap = {
-            play: 'Manual Play',
-            heuristic: 'Heuristic Emulation',
-            analysis: 'Analysis'
-        };
+    updateScore(score) {
+        const scoreElement = document.getElementById('score');
+        if (scoreElement) {
+            scoreElement.textContent = this.formatScore(score);
+        }
+    }
 
-        const heuristicType = this.elements.heuristicSelect?.value || 'monotonicity';
-        const twoPhase = this.elements.twophase?.checked || false;
+    updateLayoutForDevice() {
+        // Mobile-responsive adjustments
+        const isMobile = window.innerWidth <= 768;
+        const board = this.elements.board;
         
-        // Update mode
-        if (this.elements.descMode) {
-            this.elements.descMode.textContent = modeMap[mode] || mode;
-        }
-        
-        // Update heuristic
-        if (this.elements.descHeuristic) {
-            if (mode === 'heuristic' || mode === 'analysis') {
-                const heurDesc = twoPhase ? `Two-Phase ${heuristicType}` : heuristicType;
-                this.elements.descHeuristic.textContent = heurDesc;
+        if (board) {
+            if (isMobile) {
+                board.classList.add('mobile-board');
             } else {
-                this.elements.descHeuristic.textContent = 'N/A';
-            }
-        }
-        
-        // Update details
-        if (this.elements.descDetails) {
-            if (mode === 'play') {
-                this.elements.descDetails.textContent = 'Use arrow keys or WASD to play manually.';
-            } else if (twoPhase) {
-                this.elements.descDetails.textContent = 'Two-phase: monotonicity, then selected heuristic.';
-            } else {
-                const description = Heuristics.getHeuristicDescription(heuristicType);
-                this.elements.descDetails.textContent = description;
+                board.classList.remove('mobile-board');
             }
         }
     }
@@ -187,205 +334,154 @@ class UIManager {
     }
 
     // Control management
-    setControlsDisabled(disabled) {
-        Object.values(this.elements.controls).forEach(button => {
-            if (button) button.disabled = disabled;
-        });
-        
-        if (this.elements.heuristicSelect) this.elements.heuristicSelect.disabled = disabled;
-        if (this.elements.twophase) this.elements.twophase.disabled = disabled;
+    setButtonState(buttonId, enabled) {
+        const button = document.getElementById(buttonId);
+        if (button) {
+            button.disabled = !enabled;
+        }
     }
 
-    // Chart rendering
-    drawDistributionChart(distribution, canvasId = 'distChart') {
-        setTimeout(() => {
-            const canvas = document.getElementById(canvasId);
-            if (!canvas) return;
-            
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            const values = Object.keys(distribution).map(Number).sort((a, b) => a - b);
-            const maxCount = Math.max(...Object.values(distribution));
-            const barWidth = (canvas.width - 20) / values.length;
-            
-            values.forEach((value, index) => {
-                const count = distribution[value];
-                const height = (count / maxCount) * (canvas.height - 40);
-                const x = 10 + index * barWidth;
-                const y = canvas.height - height - 20;
-                
-                // Draw bar
-                ctx.fillStyle = '#f2b179';
-                ctx.fillRect(x, y, barWidth - 2, height);
-                
-                // Draw label
-                ctx.fillStyle = '#776e65';
-                ctx.font = '10px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(value.toString(), x + barWidth / 2, canvas.height - 5);
-                
-                // Draw count on top of bar
-                ctx.fillText(count.toString(), x + barWidth / 2, y - 5);
-            });
-        }, 100);
+    // Update button states for different modes
+    setEmulationMode(isRunning) {
+        this.setButtonState('btn-play', !isRunning);
+        this.setButtonState('btn-heuristic', isRunning);
+        this.setButtonState('btn-analysis', !isRunning);
+        this.setButtonState('btn-reset', !isRunning);
     }
 
-    // Notification system
-    showNotification(message, type = 'info') {
-        // Create notification element if it doesn't exist
-        let notification = document.getElementById('notification');
-        if (!notification) {
-            notification = document.createElement('div');
-            notification.id = 'notification';
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 15px 20px;
-                border-radius: 4px;
-                color: white;
-                font-weight: bold;
-                z-index: 1000;
-                transition: opacity 0.3s;
+    setAnalysisMode(isRunning) {
+        this.setButtonState('btn-play', !isRunning);
+        this.setButtonState('btn-heuristic', !isRunning);
+        this.setButtonState('btn-analysis', isRunning);
+        this.setButtonState('btn-reset', !isRunning);
+    }
+
+    // Log messages
+    log(message, type = 'info') {
+        if (this.elements.log) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logClass = type === 'error' ? 'text-danger' : 
+                           type === 'success' ? 'text-success' : 
+                           type === 'warning' ? 'text-warning' : '';
+            
+            this.elements.log.innerHTML += `
+                <div class="log-entry">
+                    <span class="text-muted">[${timestamp}]</span> 
+                    <span class="${logClass}">${message}</span>
+                </div>
             `;
-            document.body.appendChild(notification);
+            this.elements.log.scrollTop = this.elements.log.scrollHeight;
         }
-        
-        // Set message and style based on type
-        notification.textContent = message;
-        notification.className = type;
-        
-        switch (type) {
-            case 'success':
-                notification.style.backgroundColor = '#4CAF50';
-                break;
-            case 'error':
-                notification.style.backgroundColor = '#f44336';
-                break;
-            case 'warning':
-                notification.style.backgroundColor = '#ff9800';
-                break;
-            default:
-                notification.style.backgroundColor = '#2196F3';
-        }
-        
-        notification.style.opacity = '1';
-        
-        // Auto-hide after 3 seconds
-        setTimeout(() => {
-            notification.style.opacity = '0';
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 300);
-        }, 3000);
     }
 
-    // Export functionality helpers
-    triggerDownload(content, filename, contentType) {
-        const blob = new Blob([content], { type: contentType });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-        
-        this.showNotification(`Downloaded ${filename}`, 'success');
-    }
-
-    // Responsive design helpers
-    isMobile() {
-        return window.innerWidth <= 768;
-    }
-
-    updateLayoutForDevice() {
-        if (this.isMobile()) {
-            // Mobile-specific adjustments
-            document.body.classList.add('mobile');
-        } else {
-            document.body.classList.remove('mobile');
+    clearLog() {
+        if (this.elements.log) {
+            this.elements.log.innerHTML = '';
         }
+    }
+
+    // Utility methods
+    formatScore(score) {
+        return score.toLocaleString();
+    }
+
+    formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    // Game state indicators
+    showGameOver(finalScore, maxTile) {
+        const message = `Game Over! Final Score: ${this.formatScore(finalScore)}, Max Tile: ${maxTile}`;
+        this.log(message, 'info');
+    }
+
+    showWin(score) {
+        const message = `🎉 You reached 2048! Score: ${this.formatScore(score)}`;
+        this.log(message, 'success');
+    }
+
+    // Error handling
+    showError(message) {
+        this.log(`Error: ${message}`, 'error');
+        console.error('UI Error:', message);
+    }
+
+    // Status updates
+    showStatus(message, type = 'info') {
+        this.log(message, type);
+    }
+
+    // Analysis-specific UI updates
+    showAnalysisProgress(current, total, strategy = '') {
+        const percent = Math.round((current / total) * 100);
+        const message = strategy ? 
+            `Testing ${strategy}: ${current}/${total} games (${percent}%)` :
+            `Progress: ${current}/${total} (${percent}%)`;
+        
+        const progressHtml = `
+            <div class="analysis-progress mb-3">
+                <div class="d-flex justify-content-between mb-1">
+                    <span>${message}</span>
+                    <span>${percent}%</span>
+                </div>
+                ${this.createProgressBar(percent)}
+            </div>
+        `;
+        
+        // Update or create progress display
+        let progressElement = document.getElementById('analysis-progress');
+        if (!progressElement) {
+            progressElement = document.createElement('div');
+            progressElement.id = 'analysis-progress';
+            if (this.elements.analysis) {
+                this.elements.analysis.insertBefore(progressElement, this.elements.analysis.firstChild);
+            }
+        }
+        progressElement.innerHTML = progressHtml;
+    }
+
+    hideAnalysisProgress() {
+        const progressElement = document.getElementById('analysis-progress');
+        if (progressElement) {
+            progressElement.remove();
+        }
+    }
+
+    // Export functionality
+    downloadCSV(data, filename) {
+        const blob = new Blob([data], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    downloadHTML(data, filename) {
+        const blob = new Blob([data], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     }
 
     // Settings management
-    getSettings() {
+    getAnalysisSettings() {
         return {
-            runs: parseInt(document.getElementById('runCount')?.value) || 20,
-            pauseDuration: parseFloat(document.getElementById('pauseDuration')?.value) || 0.3,
-            weights: {
-                monotonicity: parseFloat(document.getElementById('weightMonotonicity')?.value) || 1.0,
-                corner: parseFloat(document.getElementById('weightCorner')?.value) || 1.5,
-                center: parseFloat(document.getElementById('weightCenter')?.value) || 0.0,
-                expectimax: parseFloat(document.getElementById('weightExpectimax')?.value) || 0.5,
-                opportunistic: parseFloat(document.getElementById('weightOpportunistic')?.value) || 1.0,
-                smoothness: parseFloat(document.getElementById('weightSmoothness')?.value) || 0.1,
-                empty: parseFloat(document.getElementById('weightEmpty')?.value) || 2.7,
-                merge: parseFloat(document.getElementById('weightMerge')?.value) || 1.0
-            }
+            numGames: parseInt(document.getElementById('numGames')?.value) || 10,
+            analysisMode: document.querySelector('input[name="analysisMode"]:checked')?.value || 'single',
+            selectedStrategies: Array.from(document.querySelectorAll('.strategy-checkbox:checked')).map(cb => cb.value),
+            optimizationTarget: document.getElementById('optimizationTarget')?.value || 'score'
         };
-    }
-
-    setSettings(settings) {
-        if (settings.runs !== undefined) {
-            const runCountEl = document.getElementById('runCount');
-            if (runCountEl) runCountEl.value = settings.runs;
-        }
-        
-        if (settings.pauseDuration !== undefined) {
-            const pauseDurationEl = document.getElementById('pauseDuration');
-            if (pauseDurationEl) pauseDurationEl.value = settings.pauseDuration;
-        }
-        
-        if (settings.weights) {
-            Object.keys(settings.weights).forEach(key => {
-                const element = document.getElementById(`weight${key.charAt(0).toUpperCase() + key.slice(1)}`);
-                if (element) element.value = settings.weights[key];
-            });
-        }
-    }
-
-    // ML Optimization UI
-    showOptimizationProgress(show = true) {
-        const progressEl = document.getElementById('optimizationProgress');
-        if (progressEl) {
-            progressEl.style.display = show ? 'block' : 'none';
-        }
-    }
-
-    updateOptimizationProgress(percent, status) {
-        const progressBar = document.getElementById('optimizationProgressBar');
-        const statusEl = document.getElementById('optimizationStatus');
-        
-        if (progressBar) progressBar.style.width = `${percent}%`;
-        if (statusEl) statusEl.textContent = status;
-    }
-
-    showOptimizationResults(results) {
-        const resultsEl = document.getElementById('optimizationResults');
-        const weightsEl = document.getElementById('bestWeights');
-        const performanceEl = document.getElementById('bestPerformance');
-        
-        if (resultsEl) resultsEl.style.display = 'block';
-        
-        if (weightsEl && results.weights) {
-            weightsEl.innerHTML = Object.entries(results.weights)
-                .map(([key, value]) => `${key}: ${value.toFixed(3)}`)
-                .join('<br>');
-        }
-        
-        if (performanceEl && results.performance) {
-            performanceEl.textContent = `Win Rate: ${results.performance.winRate}% | Avg Score: ${results.performance.avgScore}`;
-        }
-    }
-
-    hideOptimizationResults() {
-        const resultsEl = document.getElementById('optimizationResults');
-        if (resultsEl) resultsEl.style.display = 'none';
     }
 
     setOptimizationButtonsState(isRunning) {
@@ -394,6 +490,64 @@ class UIManager {
         
         if (startBtn) startBtn.disabled = isRunning;
         if (stopBtn) stopBtn.disabled = !isRunning;
+    }
+
+    updateDescription(mode) {
+        // Update description based on current mode
+        this.updateDescription();
+    }
+
+    showNotification(message, type = 'info') {
+        // Show notification message
+        this.log(message, type);
+        
+        // Also show as a temporary toast notification
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 4px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        `;
+        
+        // Set background color based on type
+        switch (type) {
+            case 'success':
+                notification.style.backgroundColor = '#28a745';
+                break;
+            case 'warning':
+                notification.style.backgroundColor = '#ffc107';
+                notification.style.color = '#000';
+                break;
+            case 'error':
+                notification.style.backgroundColor = '#dc3545';
+                break;
+            default:
+                notification.style.backgroundColor = '#007bff';
+        }
+        
+        document.body.appendChild(notification);
+        
+        // Fade in
+        setTimeout(() => {
+            notification.style.opacity = '1';
+        }, 10);
+        
+        // Fade out and remove after 3 seconds
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 300);
+        }, 3000);
     }
 }
 
