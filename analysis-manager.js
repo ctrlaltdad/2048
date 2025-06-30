@@ -150,11 +150,9 @@ class AnalysisManager {
                 <strong>Distribution:</strong><br>
                 ${this.formatDistribution(results.distribution)}
             </div>
-            <canvas id="distChart" width="300" height="120"></canvas>
         `;
         
         this.ui.showAnalysis(htmlContent);
-        this.ui.drawDistributionChart(results.distribution);
         this.ui.updateStats(htmlContent);
         
         // Store results globally for export

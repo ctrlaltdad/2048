@@ -534,6 +534,9 @@ class App2048 {
             if (results) {
                 this.updateStatisticsForMode(analysisMode, results);
                 this.ui.showTab('stats');
+                
+                // Close the analysis panel so user can see the statistics
+                this.hideAllPanels();
             }
         } finally {
             // Reset button states
@@ -695,13 +698,14 @@ class App2048 {
     }
 
     formatSingleStrategyStatistics(results) {
-        if (!results || !results.games) return '<p>No results available</p>';
+        if (!results || !results.scores || results.scores.length === 0) {
+            return '<p>No results available</p>';
+        }
         
-        const games = results.games;
-        const totalGames = games.length;
-        const scores = games.map(g => g.score);
-        const maxTiles = games.map(g => g.maxTile);
-        const moves = games.map(g => g.moves);
+        const totalGames = results.scores.length;
+        const scores = results.scores;
+        const maxTiles = results.maxTiles;
+        const moves = results.movesCounts;
         
         const avgScore = Math.round(scores.reduce((a, b) => a + b, 0) / totalGames);
         const maxScore = Math.max(...scores);
@@ -723,7 +727,7 @@ class App2048 {
                     <div class="stat-card">
                         <h5>🎯 Performance Overview</h5>
                         <ul>
-                            <li><strong>Strategy:</strong> ${results.strategy || 'Unknown'}</li>
+                            <li><strong>Strategy:</strong> ${results.heuristic || 'Unknown'}</li>
                             <li><strong>Games Played:</strong> ${totalGames}</li>
                             <li><strong>Win Rate (2048+):</strong> ${winRate}%</li>
                             <li><strong>Success Rate:</strong> ${reached2048}/${totalGames} games</li>
@@ -781,16 +785,10 @@ class App2048 {
             return '<p>No comparison results available</p>';
         }
         
-        console.log('Comparison results structure:', results);
-        
         // Convert the results object to an array format for processing
         const strategyResults = Object.entries(results.results).map(([strategy, data]) => {
-            console.log(`Processing strategy ${strategy}:`, data);
-            
             // Calculate statistics for each strategy's data
             const stats = this.analysis.calculateStatistics(data);
-            console.log(`Calculated stats for ${strategy}:`, stats);
-            
             const totalGames = data.runs || data.maxTiles?.length || 0;
             
             return {
@@ -884,13 +882,14 @@ class App2048 {
     }
 
     formatTwoPhaseStatistics(results) {
-        if (!results || !results.games) return '<p>No two-phase results available</p>';
+        if (!results || !results.scores || results.scores.length === 0) {
+            return '<p>No two-phase results available</p>';
+        }
         
-        const games = results.games;
-        const totalGames = games.length;
-        const scores = games.map(g => g.score);
-        const maxTiles = games.map(g => g.maxTile);
-        const moves = games.map(g => g.moves);
+        const totalGames = results.scores.length;
+        const scores = results.scores;
+        const maxTiles = results.maxTiles;
+        const moves = results.movesCounts;
         
         const avgScore = Math.round(scores.reduce((a, b) => a + b, 0) / totalGames);
         const maxScore = Math.max(...scores);
