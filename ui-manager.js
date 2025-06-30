@@ -6,6 +6,7 @@ class UIManager {
         this.setupEventListeners();
         // Show default content on load
         this.updateDescriptionContent('overview');
+        this.updateMobileInstructions();
     }
 
     initializeElements() {
@@ -467,6 +468,26 @@ class UIManager {
                 }
             }, 300);
         }, 3000);
+    }
+
+    // Update mobile instructions based on device
+    updateMobileInstructions() {
+        const instructionsEl = document.querySelector('.mobile-instructions');
+        if (!instructionsEl) return;
+        
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        
+        if (isTouchDevice) {
+            instructionsEl.innerHTML = `
+                📱 <strong>Touch Controls:</strong> Swipe in any direction to move tiles<br>
+                <small>💫 Try it now - swipe on the game board!</small>
+            `;
+        } else {
+            instructionsEl.innerHTML = `
+                ⌨️ <strong>Keyboard Controls:</strong> Use arrow keys or WASD to move tiles<br>
+                <small>📱 On mobile: swipe to play</small>
+            `;
+        }
     }
 }
 

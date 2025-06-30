@@ -24,8 +24,159 @@ h1 {
     background: #bbada0;
     padding: 10px;
     border-radius: 8px;
+    user-select: none; /* Prevent text selection on touch */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    touch-action: none; /* Prevent default touch behaviors */
+    transition: transform 0.1s ease;
+    -webkit-touch-callout: none; /* Disable callout on iOS */
+    -webkit-tap-highlight-color: transparent; /* Remove tap highlight */
 }
 
+/* Mobile touch feedback */
+@media (hover: none) and (pointer: coarse) {
+    /* These styles only apply to touch devices */
+    
+    #board {
+        cursor: grab;
+        border: 2px solid #bbada0;
+    }
+    
+    #board:active {
+        cursor: grabbing;
+    }
+    
+    .tile {
+        /* Slightly larger tiles for easier touch */
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    /* Add visual instructions for mobile users */
+    .mobile-instructions {
+        display: block;
+        text-align: center;
+        margin: 10px auto;
+        padding: 10px;
+        background: #f8f5f0;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #776e65;
+        max-width: 300px;
+    }
+}
+
+/* Hide mobile instructions on desktop */
+@media (hover: hover) and (pointer: fine) {
+    .mobile-instructions {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-container {
+        flex-direction: column;
+        padding: 10px;
+    }
+    
+    #sidepane {
+        width: 100%;
+        margin-left: 0;
+    }
+    
+    #controls {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .tile {
+        width: 60px;
+        height: 60px;
+        font-size: 1.5em;
+    }
+    
+    #board {
+        grid-template-columns: repeat(4, 60px);
+        width: 272px;
+        margin: 20px auto;
+        padding: 12px;
+        border-radius: 12px;
+    }
+    
+    .tile-1024, .tile-2048 {
+        font-size: 1.2em;
+    }
+    
+    .tile-4096 {
+        font-size: 1em;
+    }
+    
+    #analysis-panel {
+        max-width: 95vw;
+        margin-left: 2.5vw;
+        margin-right: 2.5vw;
+    }
+    
+    .analysis-tabs {
+        flex-direction: column;
+        gap: 2px;
+    }
+    
+    .analysis-tab {
+        border-radius: 4px;
+        margin-bottom: 2px;
+    }
+    
+    .twophase-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .strategy-checkboxes {
+        grid-template-columns: 1fr 1fr;
+        font-size: 11px;
+    }
+    
+    .strategy-checkboxes label {
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 480px) {
+    .strategy-checkboxes {
+        grid-template-columns: 1fr;
+    }
+    
+    .dropdown-panel {
+        padding: 16px;
+    }
+    
+    .analysis-tab {
+        font-size: 12px;
+        padding: 6px 8px;
+    }
+    
+    /* Even better mobile experience */
+    #board {
+        grid-gap: 6px;
+        padding: 8px;
+        margin: 15px auto;
+    }
+    
+    .tile {
+        border-radius: 4px;
+        font-size: 1.3em;
+    }
+    
+    .mobile-instructions {
+        font-size: 13px;
+        margin: 8px auto;
+        padding: 8px;
+    }
+}
+
+/* Tile Styles */
 .tile {
     width: 80px;
     height: 80px;
@@ -875,6 +1026,59 @@ select {
     background: #e3f2fd;
 }
 
+/* Tile Distribution Visualization */
+.tile-distribution {
+    margin-top: 10px;
+}
+
+.tile-dist-item {
+    margin: 8px 0;
+}
+
+.tile-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.tile-label strong {
+    color: #2c3e50;
+    font-size: 1.1em;
+}
+
+.tile-label span {
+    color: #6c757d;
+    font-size: 0.9em;
+}
+
+.tile-bar {
+    background: #e9ecef;
+    border-radius: 4px;
+    height: 8px;
+    overflow: hidden;
+}
+
+.tile-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #007bff, #0056b3);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+/* Special colors for high tiles */
+.tile-dist-item:first-child .tile-fill {
+    background: linear-gradient(90deg, #28a745, #1e7e34);
+}
+
+.tile-dist-item:nth-child(2) .tile-fill {
+    background: linear-gradient(90deg, #ffc107, #e0a800);
+}
+
+.tile-dist-item:nth-child(3) .tile-fill {
+    background: linear-gradient(90deg, #fd7e14, #dc6002);
+}
+
 @media (max-width: 768px) {
     .main-container {
         flex-direction: column;
@@ -900,6 +1104,9 @@ select {
     #board {
         grid-template-columns: repeat(4, 60px);
         width: 272px;
+        margin: 20px auto;
+        padding: 12px;
+        border-radius: 12px;
     }
     
     .tile-1024, .tile-2048 {
@@ -953,6 +1160,24 @@ select {
     .analysis-tab {
         font-size: 12px;
         padding: 6px 8px;
+    }
+    
+    /* Even better mobile experience */
+    #board {
+        grid-gap: 6px;
+        padding: 8px;
+        margin: 15px auto;
+    }
+    
+    .tile {
+        border-radius: 4px;
+        font-size: 1.3em;
+    }
+    
+    .mobile-instructions {
+        font-size: 13px;
+        margin: 8px auto;
+        padding: 8px;
     }
 }
 

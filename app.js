@@ -56,6 +56,9 @@ class App2048 {
         // Keyboard controls for manual play
         this.setupKeyboardControls();
         
+        // Touch controls for mobile devices
+        this.setupTouchControls();
+        
         // Window resize handler
         window.addEventListener('resize', () => this.ui.updateLayoutForDevice());
         
@@ -747,13 +750,26 @@ class App2048 {
                     </div>
                     
                     <div class="stat-card">
-                        <h5>🏆 Tile Achievements</h5>
-                        <ul>
+                        <h5>🏆 Max Tile Distribution</h5>
+                        <div class="tile-distribution">
                             ${Object.entries(maxTileCount)
                                 .sort((a, b) => parseInt(b[0]) - parseInt(a[0]))
-                                .map(([tile, count]) => `<li><strong>${tile}:</strong> ${count} games (${((count/totalGames)*100).toFixed(1)}%)</li>`)
-                                .join('')}
-                        </ul>
+                                .map(([tile, count]) => {
+                                    const percentage = ((count/totalGames)*100).toFixed(1);
+                                    const barWidth = (count/totalGames)*100;
+                                    return `
+                                        <div class="tile-dist-item">
+                                            <div class="tile-label">
+                                                <strong>${tile}</strong>
+                                                <span>${count} games (${percentage}%)</span>
+                                            </div>
+                                            <div class="tile-bar">
+                                                <div class="tile-fill" style="width: ${barWidth}%"></div>
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -761,9 +777,34 @@ class App2048 {
     }
 
     formatComparisonStatistics(results) {
-        if (!results || results.length === 0) return '<p>No comparison results available</p>';
+        if (!results || !results.results || Object.keys(results.results).length === 0) {
+            return '<p>No comparison results available</p>';
+        }
         
-        const sortedResults = [...results].sort((a, b) => b.avgScore - a.avgScore);
+        console.log('Comparison results structure:', results);
+        
+        // Convert the results object to an array format for processing
+        const strategyResults = Object.entries(results.results).map(([strategy, data]) => {
+            console.log(`Processing strategy ${strategy}:`, data);
+            
+            // Calculate statistics for each strategy's data
+            const stats = this.analysis.calculateStatistics(data);
+            console.log(`Calculated stats for ${strategy}:`, stats);
+            
+            const totalGames = data.runs || data.maxTiles?.length || 0;
+            
+            return {
+                strategy: strategy,
+                avgScore: stats.avgScore || 0,
+                maxScore: stats.maxScore || 0,
+                minScore: stats.minScore || 0,
+                avgMoves: stats.avgMoves || 0,
+                totalGames: totalGames,
+                gamesReached2048: stats.winCount || 0
+            };
+        });
+        
+        const sortedResults = strategyResults.sort((a, b) => b.avgScore - a.avgScore);
         
         return `
             <div class="statistics-content">
@@ -824,15 +865,15 @@ class App2048 {
                         <h5>🎯 Performance Insights</h5>
                         <ul>
                             <li><strong>Best Overall:</strong> ${sortedResults[0]?.strategy} (${Math.round(sortedResults[0]?.avgScore).toLocaleString()} avg score)</li>
-                            <li><strong>Highest Single Game:</strong> ${Math.max(...results.map(r => r.maxScore)).toLocaleString()}</li>
-                            <li><strong>Most Consistent:</strong> ${results.reduce((prev, curr) => 
+                            <li><strong>Highest Single Game:</strong> ${Math.max(...strategyResults.map(r => r.maxScore)).toLocaleString()}</li>
+                            <li><strong>Most Consistent:</strong> ${strategyResults.reduce((prev, curr) => 
                                 (curr.maxScore - curr.minScore) < (prev.maxScore - prev.minScore) ? curr : prev
                             ).strategy}</li>
-                            <li><strong>Most Efficient:</strong> ${results.reduce((prev, curr) => 
+                            <li><strong>Most Efficient:</strong> ${strategyResults.reduce((prev, curr) => 
                                 (curr.avgScore / curr.avgMoves) > (prev.avgScore / prev.avgMoves) ? curr : prev
-                            ).strategy} (${((results.reduce((prev, curr) => 
+                            ).strategy} (${((strategyResults.reduce((prev, curr) => 
                                 (curr.avgScore / curr.avgMoves) > (prev.avgScore / prev.avgMoves) ? curr : prev
-                            ).avgScore / results.reduce((prev, curr) => 
+                            ).avgScore / strategyResults.reduce((prev, curr) => 
                                 (curr.avgScore / curr.avgMoves) > (prev.avgScore / prev.avgMoves) ? curr : prev
                             ).avgMoves)).toFixed(1)} pts/move)</li>
                         </ul>
@@ -905,6 +946,106 @@ class App2048 {
                 </div>
             </div>
         `;
+    }
+
+    setupTouchControls() {
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchEndX = 0;
+        let touchEndY = 0;
+        const minSwipeDistance = 50; // Minimum distance for a swipe
+        
+        const gameBoard = document.getElementById('board');
+        if (!gameBoard) return;
+        
+        // Prevent default touch behaviors on the game board
+        gameBoard.addEventListener('touchstart', (e) => {
+            if (this.mode !== 'play') return;
+            
+            // Prevent scrolling and zooming on the game board
+            e.preventDefault();
+            
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+        }, { passive: false });
+        
+        gameBoard.addEventListener('touchmove', (e) => {
+            if (this.mode !== 'play') return;
+            
+            // Prevent scrolling while touching the game board
+            e.preventDefault();
+        }, { passive: false });
+        
+        gameBoard.addEventListener('touchend', (e) => {
+            if (this.mode !== 'play') return;
+            
+            e.preventDefault();
+            
+            const touch = e.changedTouches[0];
+            touchEndX = touch.clientX;
+            touchEndY = touch.clientY;
+            
+            // Calculate swipe distances
+            const deltaX = touchEndX - touchStartX;
+            const deltaY = touchEndY - touchStartY;
+            const absDeltaX = Math.abs(deltaX);
+            const absDeltaY = Math.abs(deltaY);
+            
+            // Check if it's a valid swipe (minimum distance)
+            if (Math.max(absDeltaX, absDeltaY) < minSwipeDistance) {
+                return; // Not a swipe, just a tap
+            }
+            
+            let direction = null;
+            
+            // Determine swipe direction (prioritize the larger movement)
+            if (absDeltaX > absDeltaY) {
+                // Horizontal swipe
+                direction = deltaX > 0 ? 'right' : 'left';
+            } else {
+                // Vertical swipe
+                direction = deltaY > 0 ? 'down' : 'up';
+            }
+            
+            // Execute the move
+            if (direction && this.game.move(direction)) {
+                this.ui.drawBoard(this.game);
+                
+                // Provide haptic feedback if available
+                if (navigator.vibrate) {
+                    navigator.vibrate(50); // Short vibration
+                }
+                
+                if (this.game.gameOver) {
+                    this.ui.showNotification('Game Over!', 'warning');
+                } else if (this.game.getMaxTile() >= 2048) {
+                    // Check if this is the first time reaching 2048
+                    const prevMaxTile = this.game.getMaxTile();
+                    if (prevMaxTile === 2048) {
+                        this.ui.showNotification('Congratulations! You reached 2048!', 'success');
+                        
+                        // Celebrate with longer vibration
+                        if (navigator.vibrate) {
+                            navigator.vibrate([100, 50, 100, 50, 200]);
+                        }
+                    }
+                }
+            }
+        }, { passive: false });
+        
+        // Add visual feedback for touch
+        gameBoard.addEventListener('touchstart', () => {
+            gameBoard.style.transform = 'scale(0.98)';
+        });
+        
+        gameBoard.addEventListener('touchend', () => {
+            gameBoard.style.transform = 'scale(1)';
+        });
+        
+        gameBoard.addEventListener('touchcancel', () => {
+            gameBoard.style.transform = 'scale(1)';
+        });
     }
 }
 
